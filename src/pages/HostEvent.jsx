@@ -1,12 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { Users, Play, Trophy, Clock, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { db } from '../firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 
 export default function HostEvent() {
     const { eventCode } = useParams();
     const navigate = useNavigate();
     const { events, startEvent, endEvent, pauseEvent, resetEvent } = useAppContext();
+    const [participants, setParticipants] = useState([]);
 
     const event = events[eventCode];
 
@@ -20,6 +23,19 @@ export default function HostEvent() {
         }
         return () => clearTimeout(timeout);
     }, [event, navigate]);
+
+    useEffect(() => {
+        if (!eventCode) return;
+        const participantsRef = collection(db, 'events', eventCode, 'participants');
+        const unsubscribe = onSnapshot(participantsRef, (snapshot) => {
+            const list = [];
+            snapshot.forEach(doc => {
+                list.push(doc.data());
+            });
+            setParticipants(list);
+        });
+        return () => unsubscribe();
+    }, [eventCode]);
 
     if (!event) {
         return (
@@ -41,7 +57,7 @@ export default function HostEvent() {
     };
 
     // Sort students for leaderboard: by score descending, then by time taken ascending
-    const sortedStudents = [...event.students].sort((a, b) => {
+    const sortedStudents = [...participants].sort((a, b) => {
         if (b.score !== a.score) {
             return b.score - a.score;
         }
@@ -64,15 +80,15 @@ export default function HostEvent() {
                             <Users className="text-blue-500 w-6 h-6" />
                             <div>
                                 <p className="text-sm text-gray-400">Participants Joined</p>
-                                <p className="text-2xl font-bold text-white">{event.students.length}</p>
+                                <p className="text-2xl font-bold text-white">{participants.length}</p>
                             </div>
                         </div>
 
                         {event.status === 'waiting' && (
                             <button
-                                disabled={event.students.length === 0}
+                                disabled={participants.length === 0}
                                 onClick={handleStart}
-                                className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg ${event.students.length > 0
+                                className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg ${participants.length > 0
                                     ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20'
                                     : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
                                     }`}
@@ -146,9 +162,9 @@ export default function HostEvent() {
                             They can join using the student portal. When everyone is ready, click Start Round.
                         </p>
 
-                        {event.students.length > 0 && (
+                        {participants.length > 0 && (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8 pt-8 border-t border-gray-800">
-                                {event.students.map((student, i) => (
+                                {participants.map((student, i) => (
                                     <div key={i} className="bg-[#0a0b0d] border border-gray-800 p-4 rounded-xl flex items-center flex-col gap-2">
                                         <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold">
                                             {student.name.charAt(0).toUpperCase()}

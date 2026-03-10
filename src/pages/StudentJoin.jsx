@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { UserPlus, ArrowRight, RefreshCw } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function StudentJoin() {
@@ -26,53 +26,42 @@ export default function StudentJoin() {
         const code = formData.eventCode.trim().toUpperCase();
 
         try {
-            // Explicit Firebase Firestore check
-            let eventSnap = null;
-            let attempt = 0;
-            while (attempt < 2) {
-                try {
-                    const eventRef = doc(db, 'events', code);
-                    eventSnap = await getDoc(eventRef);
-                    break;
-                } catch (err) {
-                    attempt++;
-                    if (attempt >= 2) throw err;
-                    await new Promise(res => setTimeout(res, 500));
-                }
-            }
+            const eventRef = doc(db, 'events', code);
+            const eventSnap = await getDoc(eventRef);
 
-            if (!eventSnap || !eventSnap.exists()) {
-                setError('Invalid Event Code. Please check and try again.');
+            if (!eventSnap.exists()) {
+                setError('Invalid Event Code');
                 setIsValidating(false);
                 return;
             }
 
-            const studentId = await joinEvent(code, formData);
+            const docRef = await addDoc(collection(db, 'events', code, 'participants'), {
+                name: formData.name,
+                email: formData.email,
+                language: formData.language,
+                score: 0,
+                status: 'active',
+                timeTaken: 0,
+                questionsCompleted: 0,
+                warnings: 0,
+                joinedAt: Date.now()
+            });
 
-            setIsValidating(false);
+            localStorage.setItem('eventCode', code);
+            localStorage.setItem('debugArenaSession', JSON.stringify({
+                role: 'participant',
+                eventCode: code,
+                studentId: docRef.id,
+                name: formData.name,
+                email: formData.email,
+                language: formData.language
+            }));
 
-            if (studentId === 'NOT_FOUND') {
-                setError('Invalid Event Code. Please check and try again.');
-            } else if (studentId === 'NOT_WAITING') {
-                setError('This event has already started or ended.');
-            } else if (studentId === 'DUPLICATE') {
-                setError('You have already joined this event with this email.');
-            } else if (studentId) {
-                localStorage.setItem('debugArenaSession', JSON.stringify({
-                    role: 'participant',
-                    eventCode: code,
-                    studentId: studentId,
-                    name: formData.name,
-                    email: formData.email,
-                    language: formData.language
-                }));
-                navigate(`/exam/${code}/${studentId}`);
-            } else {
-                setError('Failed to join the event. Please try again.');
-            }
-        } catch (err) {
-            console.error(err);
-            setError('Error validating event. Please try again.');
+            navigate(`/exam/${code}/${docRef.id}`);
+        } catch (error) {
+            console.error(error);
+            setError('Failed to join event. Try again.');
+        } finally {
             setIsValidating(false);
         }
     };

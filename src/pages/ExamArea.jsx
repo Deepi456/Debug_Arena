@@ -5,37 +5,51 @@ import { getQuestionsForExam } from '../utils/questions';
 import { executeCode } from '../utils/judge0';
 import Editor from '@monaco-editor/react';
 import { Clock, Play, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle, RefreshCw } from 'lucide-react';
+import { db } from '../firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 const EXAM_DURATION = 30 * 60; // 30 minutes in seconds
 
 export default function ExamArea() {
     const { eventCode, studentId } = useParams();
     const navigate = useNavigate();
-    const { events, students, completeExam, updateStudentScore, warnStudent } = useAppContext();
+    const { events, completeExam, updateStudentScore, warnStudent } = useAppContext();
 
     const event = events?.[eventCode];
-    let student = students?.[studentId];
+    const [student, setStudent] = useState(null);
 
-    // Fallback if context strictly drops the student object during a hard refresh
-    if (!student) {
+    // Initial student load from localStorage
+    useEffect(() => {
         const sessionStore = localStorage.getItem('debugArenaSession');
         if (sessionStore) {
             try {
                 const session = JSON.parse(sessionStore);
                 if (session.studentId === studentId) {
-                    student = {
+                    setStudent({
                         id: session.studentId,
                         name: session.name,
                         email: session.email,
                         language: session.language,
                         status: 'active'
-                    };
+                    });
                 }
             } catch (err) {
                 console.error("Local session invalid", err);
             }
         }
-    }
+    }, [studentId]);
+
+    // Listen to real-time student updates
+    useEffect(() => {
+        if (!eventCode || !studentId) return;
+        const studentRef = doc(db, 'events', eventCode, 'participants', studentId);
+        const unsubscribe = onSnapshot(studentRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setStudent(docSnap.data());
+            }
+        });
+        return () => unsubscribe();
+    }, [eventCode, studentId]);
 
     const [questions, setQuestions] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -104,14 +118,14 @@ export default function ExamArea() {
             // Anti-cheating listeners (Warning system)
             const handleVisibilityChange = () => {
                 if (document.hidden) {
-                    warnStudent(studentId);
+                    warnStudent(eventCode, studentId);
                     alert("WARNING: You left the exam tab. Further violations will result in disqualification.");
                 }
             };
 
             const handleFullscreenChange = () => {
                 if (!document.fullscreenElement) {
-                    warnStudent(studentId);
+                    warnStudent(eventCode, studentId);
                     alert("WARNING: You exited fullscreen mode. Further violations will result in disqualification.");
                 }
             };
@@ -152,7 +166,7 @@ export default function ExamArea() {
 
     const handleCompleteExam = () => {
         const timeTaken = EXAM_DURATION - timeLeft;
-        completeExam(studentId, timeTaken);
+        completeExam(eventCode, studentId, timeTaken);
         localStorage.removeItem('debugArenaSession');
         navigate(`/result/${eventCode}/${studentId}`);
     };
@@ -238,9 +252,9 @@ export default function ExamArea() {
                 const wasPreviouslyCorrect = prevResult?.isCorrect && prevResult?.isSubmitAction;
 
                 if (isFirstSubmit) {
-                    updateStudentScore(studentId, isCorrect ? 1 : 0, EXAM_DURATION - timeLeft, 'active', true);
+                    updateStudentScore(eventCode, studentId, isCorrect ? 1 : 0, EXAM_DURATION - timeLeft, 'active', true);
                 } else if (!wasPreviouslyCorrect && isCorrect) {
-                    updateStudentScore(studentId, 1, EXAM_DURATION - timeLeft, 'active', false);
+                    updateStudentScore(eventCode, studentId, 1, EXAM_DURATION - timeLeft, 'active', false);
                 }
             }
 

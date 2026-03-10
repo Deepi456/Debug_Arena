@@ -1,23 +1,53 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { Trophy, Clock, Medal, Home } from 'lucide-react';
+import { Trophy, Clock, Medal, Home, RefreshCw } from 'lucide-react';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function ResultPage() {
     const { eventCode, studentId } = useParams();
     const navigate = useNavigate();
-    const { events, students } = useAppContext();
+    const { events } = useAppContext();
+    const [student, setStudent] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     const event = events?.[eventCode];
-    const student = students?.[studentId];
 
     useEffect(() => {
-        if (!event || !student) {
+        const fetchStudent = async () => {
+            if (!eventCode || !studentId) return;
+            try {
+                const docRef = doc(db, 'events', eventCode, 'participants', studentId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setStudent(docSnap.data());
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchStudent();
+    }, [eventCode, studentId]);
+
+    useEffect(() => {
+        if (!isLoading && (!event || !student)) {
             navigate('/');
         }
-    }, [event, student, navigate]);
+    }, [event, student, isLoading, navigate]);
 
-    if (!event || !student) return null;
+    if (isLoading || !event || !student) {
+        return (
+            <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-4">
+                <div className="text-center">
+                    <RefreshCw className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-white mb-2">Generating Results...</h2>
+                </div>
+            </div>
+        );
+    }
 
     const getPerformanceMessage = (score) => {
         if (score >= 8) return "Excellent Performance";
