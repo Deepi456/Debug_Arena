@@ -28,10 +28,10 @@ export default function HostEvent() {
         if (!eventCode) return;
         const participantsRef = collection(db, 'events', eventCode, 'participants');
         const unsubscribe = onSnapshot(participantsRef, (snapshot) => {
-            const list = [];
-            snapshot.forEach(doc => {
-                list.push(doc.data());
-            });
+            const list = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
             setParticipants(list);
         });
         return () => unsubscribe();
@@ -171,6 +171,7 @@ export default function HostEvent() {
                                         </div>
                                         <p className="text-white font-medium text-sm text-center truncate w-full">{student.name}</p>
                                         <span className="text-xs text-gray-500 font-mono bg-[#13151a] px-2 py-1 rounded">{student.language}</span>
+                                        {student.joinedAt && <span className="text-xs text-gray-600 mt-1">{new Date(student.joinedAt).toLocaleTimeString()}</span>}
                                     </div>
                                 ))}
                             </div>
@@ -203,6 +204,7 @@ export default function HostEvent() {
                                         <th className="px-6 py-4 font-medium uppercase tracking-wider">Score (/10)</th>
                                         <th className="px-6 py-4 font-medium uppercase tracking-wider">Completed</th>
                                         <th className="px-6 py-4 font-medium uppercase tracking-wider">Time</th>
+                                        <th className="px-6 py-4 font-medium uppercase tracking-wider">Join Time</th>
                                         <th className="px-6 py-4 font-medium uppercase tracking-wider">Status</th>
                                     </tr>
                                 </thead>
@@ -238,6 +240,11 @@ export default function HostEvent() {
                                                 <div className="flex items-center gap-1.5 text-gray-400">
                                                     <Clock className="w-4 h-4" />
                                                     {Math.floor(student.timeTaken / 60)}:{String(student.timeTaken % 60).padStart(2, '0')}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <div className="text-gray-400 text-sm">
+                                                    {student.joinedAt ? new Date(student.joinedAt).toLocaleTimeString() : '-'}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-5">

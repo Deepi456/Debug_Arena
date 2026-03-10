@@ -164,10 +164,19 @@ export default function ExamArea() {
         };
     }, []);
 
+    const handleLeaveEvent = () => {
+        if (window.confirm("Are you sure you want to leave the event? You cannot rejoin after the exam ends.")) {
+            localStorage.removeItem('eventCode');
+            localStorage.removeItem('debugArenaSession');
+            navigate('/');
+        }
+    };
+
     const handleCompleteExam = () => {
         const timeTaken = EXAM_DURATION - timeLeft;
-        completeExam(eventCode, studentId, timeTaken);
+        completeExam(eventCode, studentId, timeTaken, codeValues);
         localStorage.removeItem('debugArenaSession');
+        localStorage.removeItem('eventCode');
         navigate(`/result/${eventCode}/${studentId}`);
     };
 
@@ -323,12 +332,20 @@ export default function ExamArea() {
                         <span className={timeLeft < 300 ? 'text-red-500 font-bold' : ''}>{formatTime(timeLeft)}</span>
                     </div>
 
-                    <button
-                        onClick={handleCompleteExam}
-                        className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/50 px-4 py-2 rounded-lg text-sm font-bold transition-colors"
-                    >
-                        End Exam
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleLeaveEvent}
+                            className="text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-4 py-2 rounded-lg text-sm font-bold transition-colors"
+                        >
+                            Leave Event
+                        </button>
+                        <button
+                            onClick={handleCompleteExam}
+                            className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/50 px-4 py-2 rounded-lg text-sm font-bold transition-colors"
+                        >
+                            End Exam
+                        </button>
+                    </div>
                 </div>
             </header>
 

@@ -144,8 +144,25 @@ export const AppProvider = ({ children }) => {
         }
     };
 
-    const completeExam = async (eventCode, studentId, timeTaken) => {
-        await updateStudentScore(eventCode, studentId, 0, timeTaken, 'completed', false);
+    const completeExam = async (eventCode, studentId, timeTaken, submittedCode = {}) => {
+        try {
+            if (!eventCode || !studentId) return;
+            const studentRef = doc(db, 'events', eventCode, 'participants', studentId);
+            const studentDoc = await getDoc(studentRef);
+
+            if (!studentDoc.exists()) return;
+            const student = studentDoc.data();
+
+            const updatedStudent = {
+                status: 'completed',
+                timeTaken: timeTaken,
+                submittedCode: submittedCode
+            };
+
+            await updateDoc(studentRef, updatedStudent);
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     const endEvent = async (eventCode) => {

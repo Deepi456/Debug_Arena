@@ -42,10 +42,26 @@ export default function WaitingRoom() {
         return () => unsubscribe();
     }, [eventCode, studentId, navigate]);
 
+    const handleLeaveEvent = () => {
+        if (window.confirm("Are you sure you want to leave the event?")) {
+            localStorage.removeItem('eventCode');
+            localStorage.removeItem('debugArenaSession');
+            navigate('/');
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-4">
-            <div className="text-center w-full max-w-xl bg-[#13151a] border border-gray-800 rounded-3xl p-10 shadow-2xl">
-                <div className="inline-flex items-center justify-center w-24 h-24 bg-blue-500/10 rounded-full mb-8 relative">
+        <div className="min-h-screen bg-[#0a0b0d] flex flex-col items-center justify-center p-4">
+            <div className="text-center w-full max-w-xl bg-[#13151a] border border-gray-800 rounded-3xl p-10 shadow-2xl relative">
+
+                <button
+                    onClick={handleLeaveEvent}
+                    className="absolute top-6 right-6 text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-4 py-2 rounded-lg text-sm font-bold transition-colors"
+                >
+                    Leave Event
+                </button>
+
+                <div className="inline-flex items-center justify-center w-24 h-24 bg-blue-500/10 rounded-full mb-8 relative mt-4">
                     <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full animate-spin" style={{ borderTopColor: 'transparent' }} />
                     <Clock className="w-10 h-10 text-blue-500" />
                 </div>
