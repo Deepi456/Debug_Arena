@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { UserPlus, ArrowRight, RefreshCw } from 'lucide-react';
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, setDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function StudentJoin() {
@@ -35,7 +35,7 @@ export default function StudentJoin() {
                 return;
             }
 
-            await addDoc(collection(db, 'events', code, 'participants'), {
+            await setDoc(doc(db, 'events', code, 'participants', formData.email), {
                 name: formData.name,
                 email: formData.email,
                 language: formData.language,
