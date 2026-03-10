@@ -1,18 +1,5 @@
 // Function to execute code using Judge0 API
 export const executeCode = async (sourceCode, languageId, stdin) => {
-    const options = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            source_code: sourceCode,
-            language_id: languageId,
-            stdin: stdin,
-            expected_output: null
-        })
-    };
-
     try {
         // We'll use Judge0 rapidapi or the free Judge0 CE instance
         // Since rapidapi requires keys, we'll try the free public Judge0 API for this demo
@@ -20,7 +7,6 @@ export const executeCode = async (sourceCode, languageId, stdin) => {
 
         // NOTE: The free Judge0 endpoint may have rate limits or be down. 
         // Fallback to mocked response if fetch fails
-        const API_URL = 'https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true';
 
         // For the sake of the demo, I will mock the Judge0 execution locally to ensure the app works 
         // flawlessly without a backend key requirement. A simple regex checks for correctness.
@@ -39,8 +25,6 @@ const mockJudgeExecution = async (sourceCode, languageId, stdin) => {
 
     // Determine language string
     const isPython = languageId === 71;
-    const isJava = languageId === 62;
-    const isCpp = languageId === 54;
 
     let stdout = '';
     let compileOutput = null;

@@ -1,8 +1,25 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, MonitorPlay, Code2 } from 'lucide-react';
 
 export default function LandingPage() {
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const sessionStore = localStorage.getItem('debugArenaSession');
+        if (sessionStore) {
+            try {
+                const session = JSON.parse(sessionStore);
+                if (session.role === 'participant' && session.eventCode && session.studentId) {
+                    // Auto restore session
+                    navigate(`/exam/${session.eventCode}/${session.studentId}`);
+                }
+            } catch (err) {
+                console.error("Invalid session format", err);
+                localStorage.removeItem('debugArenaSession');
+            }
+        }
+    }, [navigate]);
 
     return (
         <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-4">

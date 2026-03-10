@@ -1,263 +1,272 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from 'react';
+import { db } from '../firebase';
+import { collection, doc, setDoc, updateDoc, onSnapshot, runTransaction, getDoc } from 'firebase/firestore';
 
 const AppContext = createContext();
 
 export const useAppContext = () => useContext(AppContext);
 
-// Simple mock store and sync across tabs via localStorage
 export const AppProvider = ({ children }) => {
-    const [data, setData] = useState(() => {
-        const saved = localStorage.getItem('debug_arena_state');
-        return saved ? JSON.parse(saved) : { events: {}, students: {} };
-    });
+    const [data, setData] = useState({ events: {}, students: {} });
 
-    // Sync state across tabs
+    // Sync state with Firestore real-time listener
     useEffect(() => {
-        const handleStorageChange = (e) => {
-            if (e.key === 'debug_arena_state') {
-                setData(JSON.parse(e.newValue || '{"events":{},"students":{}}'));
-            }
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        const eventsRef = collection(db, 'events');
+        const unsubscribe = onSnapshot(eventsRef, (snapshot) => {
+            const newEvents = {};
+            const newStudents = {};
+
+            snapshot.forEach((docSnapshot) => {
+                const ev = docSnapshot.data();
+                // Map participants to students for backward compatibility with UI components
+                ev.students = ev.participants || [];
+                newEvents[docSnapshot.id] = ev;
+
+                if (ev.participants) {
+                    ev.participants.forEach(s => {
+                        newStudents[s.id] = { ...s, eventCode: docSnapshot.id };
+                    });
+                }
+            });
+
+            setData({ events: newEvents, students: newStudents });
+        }, (error) => {
+            console.error("Error connecting to Firestore: ", error);
+        });
+
+        return () => unsubscribe();
     }, []);
 
-    const updateState = (updater) => {
-        setData((prev) => {
-            // Always fetch the freshest state from localStorage to protect against concurrent tab overrides
-            const raw = localStorage.getItem('debug_arena_state');
-            const latestState = raw ? JSON.parse(raw) : prev;
-
-            const next = updater(latestState);
-            localStorage.setItem('debug_arena_state', JSON.stringify(next));
-            return next;
-        });
-    };
-
-    const createEvent = (hostName) => {
+    const createEvent = async (hostName) => {
         const eventCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-        updateState((latestState) => ({
-            ...latestState,
-            events: {
-                ...latestState.events,
-                [eventCode]: {
-                    hostName,
-                    status: 'waiting',
-                    students: [],
-                    createdAt: Date.now(),
-                },
-            },
-        }));
+        const eventRef = doc(db, 'events', eventCode);
+
+        await setDoc(eventRef, {
+            hostName,
+            status: 'waiting',
+            participants: [],
+            createdAt: Date.now(),
+        });
+
         return eventCode;
     };
 
-    const joinEvent = (eventCode, studentInfo) => {
-        let success = false;
-        let existingId = null;
+    const joinEvent = async (eventCode, studentInfo) => {
+        const eventRef = doc(db, 'events', eventCode);
 
-        updateState((latestState) => {
-            const event = latestState.events[eventCode];
-            if (!event || event.status !== 'waiting') return latestState;
-
-            // Check for duplicates by email
-            const isDuplicate = event.students.find(s => s.email.toLowerCase() === studentInfo.email.toLowerCase());
-            if (isDuplicate) {
-                existingId = 'DUPLICATE';
-                return latestState;
+        // Fire an explicit native Firestore read check per user request
+        try {
+            const snap = await getDoc(eventRef);
+            if (!snap.exists()) {
+                return 'NOT_FOUND';
             }
+        } catch (err) {
+            console.error("Initial validation error:", err);
+            // Optionally could return an error, but let transaction retry catch it as fallback
+        }
 
-            const studentId = crypto.randomUUID();
-            const newStudent = {
-                ...studentInfo,
-                id: studentId,
-                score: 0,
-                status: 'active',
-                timeTaken: 0,
-                joinedAt: Date.now(),
-                questionsCompleted: 0,
-                warnings: 0
-            };
+        let attempts = 0;
+        const maxAttempts = 2; // initial attempt + 1 retry
 
-            success = studentId;
+        while (attempts < maxAttempts) {
+            try {
+                let successId = null;
+                let isDuplicate = false;
 
-            return {
-                ...latestState,
-                events: {
-                    ...latestState.events,
-                    [eventCode]: {
-                        ...event,
-                        students: [...event.students, newStudent],
-                    },
-                },
-                students: {
-                    ...latestState.students,
-                    [studentId]: {
-                        ...newStudent,
-                        eventCode
+                const eventRef = doc(db, 'events', eventCode);
+
+                await runTransaction(db, async (transaction) => {
+                    const eventDoc = await transaction.get(eventRef);
+                    if (!eventDoc.exists()) {
+                        throw new Error("NOT_FOUND");
                     }
-                }
-            };
-        });
 
-        if (existingId === 'DUPLICATE') return 'DUPLICATE';
-        return success;
-    };
-
-    const startEvent = (eventCode) => {
-        updateState((latestState) => ({
-            ...latestState,
-            events: {
-                ...latestState.events,
-                [eventCode]: {
-                    ...latestState.events[eventCode],
-                    status: 'started',
-                    startTime: Date.now(),
-                },
-            },
-        }));
-    };
-
-    const updateStudentScore = (studentId, scoreIncrement, timeTaken = 0, status = 'active', incrementCompleted = false) => {
-        updateState((latestState) => {
-            const student = latestState.students[studentId];
-            if (!student) return latestState;
-
-            const eventCode = student.eventCode;
-            const event = latestState.events[eventCode];
-
-            const updatedStudent = {
-                ...student,
-                score: student.score + scoreIncrement,
-                timeTaken: timeTaken > 0 ? timeTaken : student.timeTaken,
-                status: status,
-                questionsCompleted: incrementCompleted ? (student.questionsCompleted || 0) + 1 : (student.questionsCompleted || 0)
-            };
-
-            const updatedStudentsList = event.students.map(s => s.id === studentId ? updatedStudent : s);
-
-            return {
-                ...latestState,
-                events: {
-                    ...latestState.events,
-                    [eventCode]: {
-                        ...event,
-                        students: updatedStudentsList,
+                    const ev = eventDoc.data();
+                    if (ev.status !== 'waiting') {
+                        throw new Error("NOT_WAITING");
                     }
-                },
-                students: {
-                    ...latestState.students,
-                    [studentId]: updatedStudent
-                }
-            };
-        });
-    };
 
-    const disqualifyStudent = (studentId) => {
-        updateStudentScore(studentId, 0, 0, 'disqualified', false);
-    };
+                    const participants = ev.participants || [];
 
-    const warnStudent = (studentId) => {
-        updateState((latestState) => {
-            const student = latestState.students[studentId];
-            if (!student) return latestState;
+                    // Check duplicate email
+                    const duplicate = participants.find(s => s.email.toLowerCase() === studentInfo.email.toLowerCase());
+                    if (duplicate) {
+                        isDuplicate = true;
+                        return;
+                    }
 
-            const eventCode = student.eventCode;
-            const event = latestState.events[eventCode];
+                    const studentId = crypto.randomUUID();
+                    const newStudent = {
+                        ...studentInfo,
+                        id: studentId,
+                        score: 0,
+                        status: 'active',
+                        timeTaken: 0,
+                        joinedAt: Date.now(),
+                        questionsCompleted: 0,
+                        warnings: 0
+                    };
 
-            const currentWarnings = student.warnings || 0;
-            const updatedStudent = { ...student, warnings: currentWarnings + 1 };
+                    const newParticipants = [...participants, newStudent];
+                    transaction.update(eventRef, { participants: newParticipants });
+                    successId = studentId;
+                });
 
-            // Auto disqualify if warnings >= 2
-            if (updatedStudent.warnings >= 2) {
-                updatedStudent.status = 'disqualified';
+                if (isDuplicate) return 'DUPLICATE';
+                return successId;
+
+            } catch (error) {
+                if (error.message === 'NOT_FOUND') return 'NOT_FOUND';
+                if (error.message === 'NOT_WAITING') return 'NOT_WAITING';
+
+                console.error(`Transaction failed attempt ${attempts + 1}: `, error);
+                attempts++;
+
+                if (attempts >= maxAttempts) return null;
+
+                // optional small delay before retry
+                await new Promise(res => setTimeout(res, 500));
             }
+        }
+    };
 
-            const updatedStudentsList = event.students.map(s => s.id === studentId ? updatedStudent : s);
-
-            return {
-                ...latestState,
-                events: {
-                    ...latestState.events,
-                    [eventCode]: {
-                        ...event,
-                        students: updatedStudentsList,
-                    }
-                },
-                students: {
-                    ...latestState.students,
-                    [studentId]: updatedStudent
-                }
-            };
+    const startEvent = async (eventCode) => {
+        const eventRef = doc(db, 'events', eventCode);
+        await updateDoc(eventRef, {
+            status: 'started',
+            startTime: Date.now(),
         });
-    }
-
-    const completeExam = (studentId, timeTaken) => {
-        updateStudentScore(studentId, 0, timeTaken, 'completed', false);
     };
 
-    const endEvent = (eventCode) => {
-        updateState((latestState) => ({
-            ...latestState,
-            events: {
-                ...latestState.events,
-                [eventCode]: {
-                    ...latestState.events[eventCode],
-                    status: 'ended',
-                    endTime: Date.now(),
-                },
-            },
-        }));
-    };
+    const updateStudentScore = async (studentId, scoreIncrement, timeTaken = 0, status = 'active', incrementCompleted = false) => {
+        try {
+            // Need to find which event this student belongs to, we use local state `data.students`
+            const studentData = data.students[studentId];
+            if (!studentData) return;
 
-    const pauseEvent = (eventCode) => {
-        updateState((latestState) => ({
-            ...latestState,
-            events: {
-                ...latestState.events,
-                [eventCode]: {
-                    ...latestState.events[eventCode],
-                    status: 'paused',
-                },
-            },
-        }));
-    };
+            const eventCode = studentData.eventCode;
+            const eventRef = doc(db, 'events', eventCode);
 
-    const resetEvent = (eventCode) => {
-        updateState((latestState) => {
-            const event = latestState.events[eventCode];
-            if (!event) return latestState;
+            await runTransaction(db, async (transaction) => {
+                const eventDoc = await transaction.get(eventRef);
+                if (!eventDoc.exists()) return;
 
-            // Reset all students
-            const resetStudents = event.students.map(s => ({
-                ...s,
-                score: 0,
-                timeTaken: 0,
-                status: 'active',
-                questionsCompleted: 0,
-                warnings: 0
-            }));
+                const ev = eventDoc.data();
+                const participants = ev.participants || [];
 
-            // Build reset student dict
-            const studentDict = { ...latestState.students };
-            resetStudents.forEach(s => {
-                studentDict[s.id] = s;
+                const pIndex = participants.findIndex(s => s.id === studentId);
+                if (pIndex === -1) return;
+
+                const student = participants[pIndex];
+
+                const updatedStudent = {
+                    ...student,
+                    score: student.score + scoreIncrement,
+                    timeTaken: timeTaken > 0 ? timeTaken : student.timeTaken,
+                    status: status,
+                    questionsCompleted: incrementCompleted ? (student.questionsCompleted || 0) + 1 : (student.questionsCompleted || 0)
+                };
+
+                const newParticipants = [...participants];
+                newParticipants[pIndex] = updatedStudent;
+
+                transaction.update(eventRef, { participants: newParticipants });
             });
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-            return {
-                ...latestState,
-                events: {
-                    ...latestState.events,
-                    [eventCode]: {
-                        ...event,
-                        status: 'waiting',
-                        students: resetStudents,
-                        startTime: null,
-                        endTime: null
-                    },
-                },
-                students: studentDict
-            };
+    const disqualifyStudent = async (studentId) => {
+        await updateStudentScore(studentId, 0, 0, 'disqualified', false);
+    };
+
+    const warnStudent = async (studentId) => {
+        try {
+            const studentData = data.students[studentId];
+            if (!studentData) return;
+
+            const eventCode = studentData.eventCode;
+            const eventRef = doc(db, 'events', eventCode);
+
+            await runTransaction(db, async (transaction) => {
+                const eventDoc = await transaction.get(eventRef);
+                if (!eventDoc.exists()) return;
+
+                const ev = eventDoc.data();
+                const participants = ev.participants || [];
+
+                const pIndex = participants.findIndex(s => s.id === studentId);
+                if (pIndex === -1) return;
+
+                const student = participants[pIndex];
+                const currentWarnings = student.warnings || 0;
+
+                const updatedStudent = { ...student, warnings: currentWarnings + 1 };
+
+                if (updatedStudent.warnings >= 2) {
+                    updatedStudent.status = 'disqualified';
+                }
+
+                const newParticipants = [...participants];
+                newParticipants[pIndex] = updatedStudent;
+
+                transaction.update(eventRef, { participants: newParticipants });
+            });
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const completeExam = async (studentId, timeTaken) => {
+        await updateStudentScore(studentId, 0, timeTaken, 'completed', false);
+    };
+
+    const endEvent = async (eventCode) => {
+        const eventRef = doc(db, 'events', eventCode);
+        await updateDoc(eventRef, {
+            status: 'ended',
+            endTime: Date.now(),
         });
+    };
+
+    const pauseEvent = async (eventCode) => {
+        const eventRef = doc(db, 'events', eventCode);
+        await updateDoc(eventRef, {
+            status: 'paused',
+        });
+    };
+
+    const resetEvent = async (eventCode) => {
+        try {
+            const eventRef = doc(db, 'events', eventCode);
+            await runTransaction(db, async (transaction) => {
+                const eventDoc = await transaction.get(eventRef);
+                if (!eventDoc.exists()) return;
+
+                const ev = eventDoc.data();
+                const participants = ev.participants || [];
+
+                const resetParticipants = participants.map(s => ({
+                    ...s,
+                    score: 0,
+                    timeTaken: 0,
+                    status: 'active',
+                    questionsCompleted: 0,
+                    warnings: 0
+                }));
+
+                transaction.update(eventRef, {
+                    status: 'waiting',
+                    participants: resetParticipants,
+                    startTime: null,
+                    endTime: null
+                });
+            });
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     return (

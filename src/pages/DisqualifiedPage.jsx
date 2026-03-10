@@ -1,4 +1,3 @@
-import { useParams } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 
 export default function DisqualifiedPage() {

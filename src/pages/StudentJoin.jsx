@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { UserPlus, ArrowRight } from 'lucide-react';
+import { UserPlus, ArrowRight, RefreshCw } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function StudentJoin() {
     const navigate = useNavigate();
-    const { joinEvent, events } = useAppContext();
+    const { joinEvent } = useAppContext();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -14,32 +16,64 @@ export default function StudentJoin() {
         language: 'Python'
     });
     const [error, setError] = useState('');
+    const [isValidating, setIsValidating] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setIsValidating(true);
 
-        const code = formData.eventCode.toUpperCase();
-        const event = events[code];
+        const code = formData.eventCode.trim().toUpperCase();
 
-        if (!event) {
-            setError('Invalid Event Code. Please check and try again.');
-            return;
-        }
+        try {
+            // Explicit Firebase Firestore check
+            let eventSnap = null;
+            let attempt = 0;
+            while (attempt < 2) {
+                try {
+                    const eventRef = doc(db, 'events', code);
+                    eventSnap = await getDoc(eventRef);
+                    break;
+                } catch (err) {
+                    attempt++;
+                    if (attempt >= 2) throw err;
+                    await new Promise(res => setTimeout(res, 500));
+                }
+            }
 
-        if (event.status !== 'waiting') {
-            setError('This event has already started or ended.');
-            return;
-        }
+            if (!eventSnap || !eventSnap.exists()) {
+                setError('Invalid Event Code. Please check and try again.');
+                setIsValidating(false);
+                return;
+            }
 
-        const studentId = joinEvent(code, formData);
+            const studentId = await joinEvent(code, formData);
 
-        if (studentId === 'DUPLICATE') {
-            setError('You have already joined this event with this email.');
-        } else if (studentId) {
-            navigate(`/exam/${code}/${studentId}`);
-        } else {
-            setError('Failed to join the event.');
+            setIsValidating(false);
+
+            if (studentId === 'NOT_FOUND') {
+                setError('Invalid Event Code. Please check and try again.');
+            } else if (studentId === 'NOT_WAITING') {
+                setError('This event has already started or ended.');
+            } else if (studentId === 'DUPLICATE') {
+                setError('You have already joined this event with this email.');
+            } else if (studentId) {
+                localStorage.setItem('debugArenaSession', JSON.stringify({
+                    role: 'participant',
+                    eventCode: code,
+                    studentId: studentId,
+                    name: formData.name,
+                    email: formData.email,
+                    language: formData.language
+                }));
+                navigate(`/exam/${code}/${studentId}`);
+            } else {
+                setError('Failed to join the event. Please try again.');
+            }
+        } catch (err) {
+            console.error(err);
+            setError('Error validating event. Please try again.');
+            setIsValidating(false);
         }
     };
 
@@ -115,10 +149,20 @@ export default function StudentJoin() {
 
                     <button
                         type="submit"
-                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl py-5 rounded-xl flex items-center justify-center gap-2 transition-colors mt-4 shadow-lg shadow-emerald-900/20"
+                        disabled={isValidating}
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl py-5 rounded-xl flex items-center justify-center gap-2 transition-colors mt-4 shadow-lg shadow-emerald-900/20 disabled:opacity-50"
                     >
-                        Join Event
-                        <ArrowRight className="w-6 h-6" />
+                        {isValidating ? (
+                            <>
+                                Validating...
+                                <RefreshCw className="w-6 h-6 animate-spin" />
+                            </>
+                        ) : (
+                            <>
+                                Join Event
+                                <ArrowRight className="w-6 h-6" />
+                            </>
+                        )}
                     </button>
                 </form>
             </div>

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { Users, Play, Trophy, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Users, Play, Trophy, Clock, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
 
 export default function HostEvent() {
     const { eventCode } = useParams();
@@ -10,14 +10,27 @@ export default function HostEvent() {
 
     const event = events[eventCode];
 
-    // If event doesn't exist, redirect
+    // If event doesn't exist, redirect after giving context a moment to sync from Firebase
     useEffect(() => {
+        let timeout;
         if (!event) {
-            navigate('/host');
+            timeout = setTimeout(() => {
+                navigate('/host');
+            }, 3000);
         }
+        return () => clearTimeout(timeout);
     }, [event, navigate]);
 
-    if (!event) return null;
+    if (!event) {
+        return (
+            <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-4">
+                <div className="text-center">
+                    <RefreshCw className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-white mb-2">Loading Arena Data...</h2>
+                </div>
+            </div>
+        );
+    }
 
     const handleStart = () => {
         startEvent(eventCode);
@@ -50,15 +63,19 @@ export default function HostEvent() {
                         <div className="flex items-center gap-3 bg-[#13151a] border border-gray-800 px-6 py-3 rounded-xl">
                             <Users className="text-blue-500 w-6 h-6" />
                             <div>
-                                <p className="text-sm text-gray-400">Total Students</p>
+                                <p className="text-sm text-gray-400">Participants Joined</p>
                                 <p className="text-2xl font-bold text-white">{event.students.length}</p>
                             </div>
                         </div>
 
                         {event.status === 'waiting' && (
                             <button
+                                disabled={event.students.length === 0}
                                 onClick={handleStart}
-                                className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-500/20"
+                                className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg ${event.students.length > 0
+                                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20'
+                                    : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                                    }`}
                             >
                                 <Play className="fill-current w-5 h-5" />
                                 Start Round

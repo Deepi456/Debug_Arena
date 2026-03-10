@@ -11,10 +11,31 @@ const EXAM_DURATION = 30 * 60; // 30 minutes in seconds
 export default function ExamArea() {
     const { eventCode, studentId } = useParams();
     const navigate = useNavigate();
-    const { events, students, disqualifyStudent, completeExam, updateStudentScore, warnStudent } = useAppContext();
+    const { events, students, completeExam, updateStudentScore, warnStudent } = useAppContext();
 
     const event = events?.[eventCode];
-    const student = students?.[studentId];
+    let student = students?.[studentId];
+
+    // Fallback if context strictly drops the student object during a hard refresh
+    if (!student) {
+        const sessionStore = localStorage.getItem('debugArenaSession');
+        if (sessionStore) {
+            try {
+                const session = JSON.parse(sessionStore);
+                if (session.studentId === studentId) {
+                    student = {
+                        id: session.studentId,
+                        name: session.name,
+                        email: session.email,
+                        language: session.language,
+                        status: 'active'
+                    };
+                }
+            } catch (err) {
+                console.error("Local session invalid", err);
+            }
+        }
+    }
 
     const [questions, setQuestions] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -41,16 +62,21 @@ export default function ExamArea() {
     // Anti-cheating & Timer logic
     useEffect(() => {
         if (!event || !student) {
-            navigate('/');
+            const session = localStorage.getItem('debugArenaSession');
+            if (!session) {
+                navigate('/');
+            }
             return;
         }
 
         if (student.status === 'disqualified') {
+            localStorage.removeItem('debugArenaSession');
             navigate(`/disqualified/${eventCode}/${studentId}`);
             return;
         }
 
         if (student.status === 'completed') {
+            localStorage.removeItem('debugArenaSession');
             navigate(`/result/${eventCode}/${studentId}`);
             return;
         }
@@ -61,7 +87,9 @@ export default function ExamArea() {
                 if (!document.fullscreenElement) {
                     document.documentElement.requestFullscreen().catch(e => console.log(e));
                 }
-            } catch (e) { }
+            } catch (err) {
+                console.error("Fullscreen error:", err);
+            }
 
             const timer = setInterval(() => {
                 setTimeLeft((prev) => {
@@ -99,6 +127,7 @@ export default function ExamArea() {
         } else if (event.status === 'ended' || event.status === 'paused') {
             if (event.status === 'ended') handleCompleteExam();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [event?.status, student?.status, eventCode, studentId]);
 
     // Global shortcut disabler
@@ -121,14 +150,10 @@ export default function ExamArea() {
         };
     }, []);
 
-    const handleDisqualify = () => {
-        disqualifyStudent(studentId);
-        navigate(`/disqualified/${eventCode}/${studentId}`);
-    };
-
     const handleCompleteExam = () => {
         const timeTaken = EXAM_DURATION - timeLeft;
         completeExam(studentId, timeTaken);
+        localStorage.removeItem('debugArenaSession');
         navigate(`/result/${eventCode}/${studentId}`);
     };
 
@@ -235,7 +260,15 @@ export default function ExamArea() {
         }
     };
 
-    if (!event || !student) return null;
+    if (!event || !student) {
+        return (
+            <div className="min-h-screen bg-[#0a0b0d] flex flex-col items-center justify-center p-4">
+                <RefreshCw className="w-12 h-12 text-blue-500 animate-spin mb-6" />
+                <h2 className="text-2xl font-bold text-white mb-2">Connecting to Arena...</h2>
+                <p className="text-gray-400">Please wait while we sync with the server.</p>
+            </div>
+        );
+    }
 
     if (event.status === 'waiting') {
         return (

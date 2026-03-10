@@ -8,11 +8,11 @@ export default function HostDashboard() {
     const navigate = useNavigate();
     const { createEvent } = useAppContext();
 
-    const handleCreate = (e) => {
+    const handleCreate = async (e) => {
         e.preventDefault();
         if (!hostName.trim()) return;
 
-        const eventCode = createEvent(hostName);
+        const eventCode = await createEvent(hostName);
         navigate(`/host/${eventCode}`);
     };
 
