@@ -62,7 +62,7 @@ export default function ExamArea() {
     // Initialize questions
     useEffect(() => {
         if (student && event && questions.length === 0) {
-            const qs = getQuestionsForExam(student.language, eventCode);
+            const qs = getQuestionsForExam(student.language, eventCode, studentId);
             setQuestions(qs);
 
             const initialCodes = {};

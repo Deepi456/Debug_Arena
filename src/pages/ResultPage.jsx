@@ -67,7 +67,7 @@ export default function ResultPage() {
     const message = getPerformanceMessage(student.score);
     const isExcellent = student.score >= 8;
 
-    const questions = getQuestionsForExam(student.language, eventCode);
+    const questions = getQuestionsForExam(student.language, eventCode, studentId);
 
     return (
         <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-4 py-12">
@@ -145,8 +145,8 @@ export default function ResultPage() {
                                     <div className="flex items-center justify-between mb-3">
                                         <h3 className="text-xl font-bold text-white">Question {idx + 1}: {q.title}</h3>
                                         <span className={`px-3 py-1 text-xs font-bold rounded-full ${q.difficulty === 'Easy' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                                                q.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
-                                                    'bg-red-500/10 text-red-400 border border-red-500/20'
+                                            q.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
+                                                'bg-red-500/10 text-red-400 border border-red-500/20'
                                             }`}>
                                             {q.difficulty}
                                         </span>

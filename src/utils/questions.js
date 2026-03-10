@@ -1,67 +1,264 @@
-// DebugArena Question Bank
-// Requirement: 2 Easy, 4 Medium, 4 Hard per language.
+// src/utils/questions.js
 
-const pythonQuestions = [
-    // 2 Easy
-    { id: 'p1', title: 'Sum of Array', difficulty: 'Easy', description: 'Fix the indentation bug in the sum_array function.', buggyCode: 'def sum_array(arr):\n    total = 0\n    for i in arr:\n    total += i\n    return total', expectedOutput: '15', testInput: '[1, 2, 3, 4, 5]', solution: 'def sum_array(arr):\n    total = 0\n    for i in arr:\n        total += i\n    return total' },
-    { id: 'p2', title: 'List Indexing', difficulty: 'Easy', description: 'This function should print the last element of the list. Fix the indexing error.', buggyCode: 'def get_last_element(lst):\n    return lst[len(lst)]', expectedOutput: '5', testInput: '[1, 2, 3, 4, 5]', solution: 'def get_last_element(lst):\n    return lst[-1]' },
-
-    // 4 Medium
-    { id: 'p3', title: 'List Modification', difficulty: 'Medium', description: 'Fix the logical error when trying to remove even numbers from a list during iteration.', buggyCode: 'def remove_evens(lst):\n    for num in lst:\n        if num % 2 == 0:\n            lst.remove(num)\n    return lst', expectedOutput: '[1, 3, 5]', testInput: '[1, 2, 4, 3, 5]', solution: 'def remove_evens(lst):\n    return [num for num in lst if num % 2 != 0]' },
-    { id: 'p4', title: 'Leap Year Logic', difficulty: 'Medium', description: 'Fix the incorrect conditional logic identifying leap years.', buggyCode: 'def is_leap_year(year):\n    if year % 4 == 0:\n        if year % 100 == 0 and year % 400 != 0:\n            return True\n        return False\n    return False', expectedOutput: 'True', testInput: '2000', solution: 'def is_leap_year(year):\n    if year % 4 == 0:\n        if year % 100 == 0:\n            return year % 400 == 0\n        return True\n    return False' },
-    { id: 'p5', title: 'Dictionary Iteration', difficulty: 'Medium', description: 'Fix the runtime error caused by trying to delete dictionary keys while iterating over them.', buggyCode: 'def remove_empty_keys(d):\n    for k in d.keys():\n        if not d[k]:\n            del d[k]\n    return d', expectedOutput: '{"a": 1}', testInput: '{"a": 1, "b": "", "c": None}', solution: 'def remove_empty_keys(d):\n    keys_to_remove = [k for k in d if not d[k]]\n    for k in keys_to_remove:\n        del d[k]\n    return d' },
-    { id: 'p6', title: 'Matrix Transpose', difficulty: 'Medium', description: 'Fix the nested loop logic that is copying the wrong elements and giving a malformed transposed matrix.', buggyCode: 'def transpose(matrix):\n    rows = len(matrix)\n    cols = len(matrix[0])\n    transposed = [[0] * rows] * cols\n    for i in range(rows):\n        for j in range(cols):\n            transposed[j][i] = matrix[i][j]\n    return transposed', expectedOutput: '[[1, 3], [2, 4]]', testInput: '[[1, 2], [3, 4]]', solution: 'def transpose(matrix):\n    rows = len(matrix)\n    cols = len(matrix[0])\n    transposed = [[0 for _ in range(rows)] for _ in range(cols)]\n    for i in range(rows):\n        for j in range(cols):\n            transposed[j][i] = matrix[i][j]\n    return transposed' },
-
-    // 4 Hard
-    { id: 'p7', title: 'Memoized Fibonacci', difficulty: 'Hard', description: 'Fix the recursion bug where the memoization dictionary is used improperly causing a RecursionError or incorrect result.', buggyCode: 'def fib(n, memo={}):\n    if n in memo:\n        return memo[n]\n    if n <= 2:\n        return 1\n    memo[n] = fib(n-1) + fib(n-2)\n    return memo[n]', expectedOutput: '55', testInput: '10', solution: 'def fib(n, memo=None):\n    if memo is None:\n        memo = {}\n    if n in memo:\n        return memo[n]\n    if n <= 2:\n        return 1\n    memo[n] = fib(n-1, memo) + fib(n-2, memo)\n    return memo[n]' },
-    { id: 'p8', title: 'Max Sliding Window', difficulty: 'Hard', description: 'Fix the logic to correctly find the maximum of each sliding window of size k.', buggyCode: 'def max_sliding_window(nums, k):\n    if not nums: return []\n    res = []\n    for i in range(len(nums) - k):\n        window = nums[i:i+k]\n        res.append(max(window))\n    return res', expectedOutput: '[3, 3, 5]', testInput: '[1, 3, -1, -3, 5], 3', solution: 'def max_sliding_window(nums, k):\n    if not nums: return []\n    res = []\n    for i in range(len(nums) - k + 1):\n        window = nums[i:i+k]\n        res.append(max(window))\n    return res' },
-    { id: 'p9', title: 'Variable Scope Closure', difficulty: 'Hard', description: 'Fix the closure lambda binding bug so the list of functions returns [0, 1, 2, 3]', buggyCode: 'def create_multipliers():\n    return [lambda x: i * x for i in range(4)]\n\nmuls = create_multipliers()\nprint([m(1) for m in muls])', expectedOutput: '[0, 1, 2, 3]', testInput: '[]', solution: 'def create_multipliers():\n    return [lambda x, i=i: i * x for i in range(4)]\n\nmuls = create_multipliers()\nprint([m(1) for m in muls])' },
-    { id: 'p10', title: 'Cyclic Ref Memory Leak', difficulty: 'Hard', description: 'Fix the cyclic reference so object is properly garbage collected immediately.', buggyCode: 'class Node:\n    def __init__(self):\n        self.ref = None\n\nn1 = Node()\nn2 = Node()\nn1.ref = n2\n# Cause cyclic ref\nn2.ref = n1\n\ndel n1\ndel n2\nprint("Done")', expectedOutput: '"Done"', testInput: '[]', solution: 'import weakref\nclass Node:\n    def __init__(self):\n        self.ref = None\n\nn1 = Node()\nn2 = Node()\nn1.ref = weakref.ref(n2)\nn2.ref = weakref.ref(n1)\n\ndel n1\ndel n2\nprint("Done")' }
+export const pythonQuestions = [
+    // Easy (2)
+    {
+        id: 'p_e1', title: 'Missing Colon', difficulty: 'Easy',
+        description: 'Fix the syntax error in the conditional statement.',
+        buggyCode: 'def check_positive(num):\n    if num > 0\n        return True\n    return False',
+        correctCode: 'def check_positive(num):\n    if num > 0:\n        return True\n    return False',
+        testInput: '5', expectedOutput: 'True',
+        explanation: 'Python requires a colon (:) at the end of conditional statements like if, elif, and else.'
+    },
+    {
+        id: 'p_e2', title: 'Variable Typo', difficulty: 'Easy',
+        description: 'Fix the variable naming error that causes a NameError.',
+        buggyCode: 'def calculate_total(price, tax):\n    total_price = price + tax\n    return totl_price',
+        correctCode: 'def calculate_total(price, tax):\n    total_price = price + tax\n    return total_price',
+        testInput: '10, 2', expectedOutput: '12',
+        explanation: 'The variable returned was misspelled as "totl_price" instead of the defined "total_price".'
+    },
+    // Medium (4)
+    {
+        id: 'p_m1', title: 'Incorrect Loop Condition', difficulty: 'Medium',
+        description: 'The loop should print numbers from 1 to 5, but it behaves incorrectly.',
+        buggyCode: 'def print_numbers():\n    i = 1\n    res = []\n    while i < 5:\n        res.append(i)\n        i += 1\n    return res',
+        correctCode: 'def print_numbers():\n    i = 1\n    res = []\n    while i <= 5:\n        res.append(i)\n        i += 1\n    return res',
+        testInput: '', expectedOutput: '[1, 2, 3, 4, 5]',
+        explanation: 'The condition `i < 5` stops at 4. It must be `i <= 5` or `i < 6` to include 5.'
+    },
+    {
+        id: 'p_m2', title: 'List Indexing Mistake', difficulty: 'Medium',
+        description: 'Fix the function so it safely returns the last element of the list.',
+        buggyCode: 'def get_last(lst):\n    return lst[len(lst)]',
+        correctCode: 'def get_last(lst):\n    return lst[-1]',
+        testInput: '[10, 20, 30]', expectedOutput: '30',
+        explanation: 'Indices are 0-based, so `len(lst)` is out of bounds. The last element is at `len(lst) - 1` or simply `-1`.'
+    },
+    {
+        id: 'p_m3', title: 'Incorrect Conditional', difficulty: 'Medium',
+        description: 'Fix the logic to correctly identify if a number is even and positive.',
+        buggyCode: 'def even_and_positive(n):\n    if n % 2 == 0 or n > 0:\n        return True\n    return False',
+        correctCode: 'def even_and_positive(n):\n    if n % 2 == 0 and n > 0:\n        return True\n    return False',
+        testInput: '-2', expectedOutput: 'False',
+        explanation: 'The `or` operator makes it return True if it is even OR positive. It should be `and` for both conditions to be met.'
+    },
+    {
+        id: 'p_m4', title: 'Factorial Logic Error', difficulty: 'Medium',
+        description: 'Fix the factorial algorithm logic so it computes correctly.',
+        buggyCode: 'def factorial(n):\n    result = 0\n    for i in range(1, n + 1):\n        result *= i\n    return result',
+        correctCode: 'def factorial(n):\n    result = 1\n    for i in range(1, n + 1):\n        result *= i\n    return result',
+        testInput: '4', expectedOutput: '24',
+        explanation: 'The initial value of result was 0. Multiplying anything by 0 results in 0. It must be initialized to 1.'
+    },
+    // Hard (4)
+    {
+        id: 'p_h1', title: 'Recursive Base Case', difficulty: 'Hard',
+        description: 'Fix the recursive sum function to prevent it from failing with maximum recursion depth.',
+        buggyCode: 'def recursive_sum(n):\n    if n == 0:\n        return 1\n    return n + recursive_sum(n - 1)',
+        correctCode: 'def recursive_sum(n):\n    if n <= 0:\n        return 0\n    return n + recursive_sum(n - 1)',
+        testInput: '5', expectedOutput: '15',
+        explanation: 'The base case returned 1 instead of 0, and didn\'t handle negative boundaries properly, altering the sum.'
+    },
+    {
+        id: 'p_h2', title: 'List Iteration Modification', difficulty: 'Hard',
+        description: 'Iterating and removing items from the list causes it to skip elements.',
+        buggyCode: 'def remove_evens(lst):\n    for num in lst:\n        if num % 2 == 0:\n            lst.remove(num)\n    return lst',
+        correctCode: 'def remove_evens(lst):\n    return [num for num in lst if num % 2 != 0]',
+        testInput: '[2, 4, 6, 8, 5]', expectedOutput: '[5]',
+        explanation: 'Modifying a list while iterating over it shifts indices, causing elements to be skipped. A list comprehension safely creates a new list.'
+    },
+    {
+        id: 'p_h3', title: 'Default Mutable Arguments', difficulty: 'Hard',
+        description: 'Fix the function so it doesn\'t share the same list instance across multiple calls.',
+        buggyCode: 'def append_to_list(val, lst=[]):\n    lst.append(val)\n    return lst',
+        correctCode: 'def append_to_list(val, lst=None):\n    if lst is None:\n        lst = []\n    lst.append(val)\n    return lst',
+        testInput: '5', expectedOutput: '[5]',
+        explanation: 'Default arguments are evaluated once in Python. A mutable default like `lst=[]` retains its state between function calls. Use `None` instead.'
+    },
+    {
+        id: 'p_h4', title: 'Nested Loop Duplications', difficulty: 'Hard',
+        description: 'Fix the nested loop so it sums the matrix elements correctly without double counting.',
+        buggyCode: 'def matrix_sum(matrix):\n    total = 0\n    for row in matrix:\n        for col in matrix:\n            total += col[0]\n    return total',
+        correctCode: 'def matrix_sum(matrix):\n    total = 0\n    for row in matrix:\n        for val in row:\n            total += val\n    return total',
+        testInput: '[[1, 2], [3, 4]]', expectedOutput: '10',
+        explanation: 'The inner loop incorrectly iterated over `matrix` again instead of `row`, summing incorrect columns repeatedly.'
+    }
 ];
 
-const javaQuestions = [
-    // 2 Easy
-    { id: 'j1', title: 'Missing Semicolon', difficulty: 'Easy', description: 'Fix the syntax error so the program compiles.', buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World")\n    }\n}', expectedOutput: '"Hello World"', testInput: '', solution: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World");\n    }\n}' },
-    { id: 'j2', title: 'Array Index Bounds', difficulty: 'Easy', description: 'Fix the loop to avoid the ArrayIndexOutOfBoundsException.', buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        int[] arr = {1, 2, 3};\n        for (int i = 0; i <= arr.length; i++) {\n            System.out.print(arr[i] + " ");\n        }\n    }\n}', expectedOutput: '"1 2 3 "', testInput: '', solution: 'public class Main {\n    public static void main(String[] args) {\n        int[] arr = {1, 2, 3};\n        for (int i = 0; i < arr.length; i++) {\n            System.out.print(arr[i] + " ");\n        }\n    }\n}' },
-
-    // 4 Medium
-    { id: 'j3', title: 'Concurrent Modification', difficulty: 'Medium', description: 'Fix the runtime error caused by modifying a collection while iterating over it.', buggyCode: 'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));\n        for (String s : list) {\n            if (s.equals("B")) list.remove(s);\n        }\n        System.out.println(list.size());\n    }\n}', expectedOutput: '"2"', testInput: '', solution: 'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));\n        list.removeIf(s -> s.equals("B"));\n        System.out.println(list.size());\n    }\n}' },
-    { id: 'j4', title: 'Variable Shadowing', difficulty: 'Medium', description: 'Fix the setter method so it properly updates the instance variable instead of shadowing it.', buggyCode: 'public class Main {\n    int value = 10;\n    public void setValue(int value) {\n        value = value;\n    }\n    public static void main(String[] args) {\n        Main obj = new Main();\n        obj.setValue(20);\n        System.out.println(obj.value);\n    }\n}', expectedOutput: '"20"', testInput: '', solution: 'public class Main {\n    int value = 10;\n    public void setValue(int value) {\n        this.value = value;\n    }\n    public static void main(String[] args) {\n        Main obj = new Main();\n        obj.setValue(20);\n        System.out.println(obj.value);\n    }\n}' },
-    { id: 'j5', title: 'String Equality', difficulty: 'Medium', description: 'Fix the bug causing the strings to be evaluated as unequal.', buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        String a = new String("Java");\n        String b = new String("Java");\n        if (a == b) {\n            System.out.println("Equal");\n        } else {\n            System.out.println("Not Equal");\n        }\n    }\n}', expectedOutput: '"Equal"', testInput: '', solution: 'public class Main {\n    public static void main(String[] args) {\n        String a = new String("Java");\n        String b = new String("Java");\n        if (a.equals(b)) {\n            System.out.println("Equal");\n        } else {\n            System.out.println("Not Equal");\n        }\n    }\n}' },
-    { id: 'j6', title: 'String Immutability', difficulty: 'Medium', description: 'Fix the method so it actually manipulates the string. Remember Strings are immutable!', buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        String s = "hello";\n        s.toUpperCase();\n        s.replace("H", "Y");\n        System.out.println(s);\n    }\n}', expectedOutput: '"yello"', testInput: '', solution: 'public class Main {\n    public static void main(String[] args) {\n        String s = "hello";\n        s = s.replace("h", "y");\n        System.out.println(s);\n    }\n}' },
-
-    // 4 Hard
-    { id: 'j7', title: 'Recursive Binary Search', difficulty: 'Hard', description: 'Fix the StackOverflowError by correcting the recursive step logic bounds.', buggyCode: 'import java.util.*;\npublic class Main {\n    static int search(int[] arr, int target, int low, int high) {\n        if (low > high) return -1;\n        int mid = (low + high) / 2;\n        if (arr[mid] == target) return mid;\n        if (arr[mid] > target) return search(arr, target, low, mid);\n        return search(arr, target, mid, high);\n    }\n    public static void main(String[] args) {\n        int[] arr = {1, 3, 5, 7, 9};\n        System.out.println(search(arr, 7, 0, arr.length - 1));\n    }\n}', expectedOutput: '"3"', testInput: '', solution: 'import java.util.*;\npublic class Main {\n    static int search(int[] arr, int target, int low, int high) {\n        if (low > high) return -1;\n        int mid = low + (high - low) / 2;\n        if (arr[mid] == target) return mid;\n        if (arr[mid] > target) return search(arr, target, low, mid - 1);\n        return search(arr, target, mid + 1, high);\n    }\n    public static void main(String[] args) {\n        int[] arr = {1, 3, 5, 7, 9};\n        System.out.println(search(arr, 7, 0, arr.length - 1));\n    }\n}' },
-    { id: 'j8', title: 'Subarray Sum', difficulty: 'Hard', description: 'Fix the logical mistake where the sliding window algorithm fails to detect the correct subarray sum.', buggyCode: 'public class Main {\n    static boolean hasSubarraySum(int[] arr, int target) {\n        int sum = 0;\n        for (int i = 0; i < arr.length; i++) {\n            sum += arr[i];\n            if (sum == target) return true;\n            if (sum > target) sum = 0;\n        }\n        return false;\n    }\n    public static void main(String[] args) {\n        int[] arr = {1, 4, 20, 3, 10, 5};\n        System.out.println(hasSubarraySum(arr, 33));\n    }\n}', expectedOutput: '"true"', testInput: '', solution: 'public class Main {\n    static boolean hasSubarraySum(int[] arr, int target) {\n        int currentSum = arr[0], start = 0;\n        for (int i = 1; i <= arr.length; i++) {\n            while (currentSum > target && start < i - 1) {\n                currentSum -= arr[start];\n                start++;\n            }\n            if (currentSum == target) return true;\n            if (i < arr.length) currentSum += arr[i];\n        }\n        return false;\n    }\n    public static void main(String[] args) {\n        int[] arr = {1, 4, 20, 3, 10, 5};\n        System.out.println(hasSubarraySum(arr, 33));\n    }\n}' },
-    { id: 'j9', title: 'Race Condition Threading', difficulty: 'Hard', description: 'Fix the race condition in threading increment logic.', buggyCode: 'public class Main {\n    static int count = 0;\n    public static void main(String[] args) throws Exception {\n        Thread t1 = new Thread(() -> { for(int i=0;i<1000;i++) count++; });\n        Thread t2 = new Thread(() -> { for(int i=0;i<1000;i++) count++; });\n        t1.start(); t2.start();\n        t1.join(); t2.join();\n        System.out.println(count);\n    }\n}', expectedOutput: '"2000"', testInput: '', solution: 'import java.util.concurrent.atomic.AtomicInteger;\npublic class Main {\n    static AtomicInteger count = new AtomicInteger(0);\n    public static void main(String[] args) throws Exception {\n        Thread t1 = new Thread(() -> { for(int i=0;i<1000;i++) count.incrementAndGet(); });\n        Thread t2 = new Thread(() -> { for(int i=0;i<1000;i++) count.incrementAndGet(); });\n        t1.start(); t2.start();\n        t1.join(); t2.join();\n        System.out.println(count.get());\n    }\n}' },
-    { id: 'j10', title: 'Polymorphic Collection Runtime', difficulty: 'Hard', description: 'Fix runtime ClassCastException when downcasting object from a pure interface reference.', buggyCode: 'import java.util.*;\ninterface A {}\nclass B implements A { void b() {} }\nclass C implements A { void c() {} }\npublic class Main {\n    public static void main(String[] args) {\n        List<A> list = new ArrayList<>();\n        list.add(new B());\n        list.add(new C());\n        for (A obj : list) {\n            ((B)obj).b();\n        }\n        System.out.println("Success");\n    }\n}', expectedOutput: '"Success"', testInput: '', solution: 'import java.util.*;\ninterface A {}\nclass B implements A { void b() {} }\nclass C implements A { void c() {} }\npublic class Main {\n    public static void main(String[] args) {\n        List<A> list = new ArrayList<>();\n        list.add(new B());\n        list.add(new C());\n        for (A obj : list) {\n            if (obj instanceof B) {\n                ((B)obj).b();\n            }\n        }\n        System.out.println("Success");\n    }\n}' }
+export const javaQuestions = [
+    // Easy (2)
+    {
+        id: 'j_e1', title: 'Missing Semicolon', difficulty: 'Easy',
+        description: 'Fix the syntax error stopping the code from compiling.',
+        buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World")\n    }\n}',
+        correctCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World");\n    }\n}',
+        testInput: '', expectedOutput: 'Hello World',
+        explanation: 'Java statements must be terminated with a semicolon (;).'
+    },
+    {
+        id: 'j_e2', title: 'Print Typo', difficulty: 'Easy',
+        description: 'Fix the typo in the standard output method.',
+        buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.printl("Debug Arena");\n    }\n}',
+        correctCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Debug Arena");\n    }\n}',
+        testInput: '', expectedOutput: 'Debug Arena',
+        explanation: 'The correct method name is `println` or `print`, not `printl`.'
+    },
+    // Medium (4)
+    {
+        id: 'j_m1', title: 'Array Index Out of Bounds', difficulty: 'Medium',
+        description: 'Fix the loop so it does not throw an ArrayIndexOutOfBoundsException.',
+        buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        int[] arr = {1, 2, 3};\n        for (int i = 0; i <= arr.length; i++) {\n            System.out.print(arr[i]);\n        }\n    }\n}',
+        correctCode: 'public class Main {\n    public static void main(String[] args) {\n        int[] arr = {1, 2, 3};\n        for (int i = 0; i < arr.length; i++) {\n            System.out.print(arr[i]);\n        }\n    }\n}',
+        testInput: '', expectedOutput: '123',
+        explanation: 'Array indices are 0-based. The condition `i <= arr.length` accesses an index equal to the length, which is out of bounds. It must be `< arr.length`.'
+    },
+    {
+        id: 'j_m2', title: 'String Equality', difficulty: 'Medium',
+        description: 'Fix the condition so it correctly compares the content of the strings.',
+        buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        String a = new String("Java");\n        String b = new String("Java");\n        if (a == b) System.out.print("Equal");\n        else System.out.print("Not Equal");\n    }\n}',
+        correctCode: 'public class Main {\n    public static void main(String[] args) {\n        String a = new String("Java");\n        String b = new String("Java");\n        if (a.equals(b)) System.out.print("Equal");\n        else System.out.print("Not Equal");\n    }\n}',
+        testInput: '', expectedOutput: 'Equal',
+        explanation: 'The `==` operator compares memory references. The `.equals()` method compares the actual textual content of the strings.'
+    },
+    {
+        id: 'j_m3', title: 'Off-By-One Logic', difficulty: 'Medium',
+        description: 'Fix the loop bounds so it prints numbers 1 to 5 exactly.',
+        buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        for (int i = 1; i < 5; i++) {\n            System.out.print(i);\n        }\n    }\n}',
+        correctCode: 'public class Main {\n    public static void main(String[] args) {\n        for (int i = 1; i <= 5; i++) {\n            System.out.print(i);\n        }\n    }\n}',
+        testInput: '', expectedOutput: '12345',
+        explanation: '`i < 5` stops at 4. Changing it to `i <= 5` ensures 5 is included in the output.'
+    },
+    {
+        id: 'j_m4', title: 'Incorrect Conditional Execution', difficulty: 'Medium',
+        description: 'Fix the logic so that "Even" is only printed for even numbers.',
+        buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        int num = 4;\n        if (num % 2 == 1)\n            System.out.print("Even");\n        else\n            System.out.print("Odd");\n    }\n}',
+        correctCode: 'public class Main {\n    public static void main(String[] args) {\n        int num = 4;\n        if (num % 2 == 0)\n            System.out.print("Even");\n        else\n            System.out.print("Odd");\n    }\n}',
+        testInput: '', expectedOutput: 'Even',
+        explanation: '`num % 2 == 1` checks for odd numbers. It should be `== 0` to identify even numbers.'
+    },
+    // Hard (4)
+    {
+        id: 'j_h1', title: 'Concurrent Modification', difficulty: 'Hard',
+        description: 'Removing an element during a standard for-each loop throws a ConcurrentModificationException.',
+        buggyCode: 'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));\n        for (String s : list) {\n            if (s.equals("B")) list.remove(s);\n        }\n        System.out.print(list.size());\n    }\n}',
+        correctCode: 'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));\n        list.removeIf(s -> s.equals("B"));\n        System.out.print(list.size());\n    }\n}',
+        testInput: '', expectedOutput: '2',
+        explanation: 'You cannot remove elements directly from a collection while using a for-each loop. Use `.removeIf()` or an Iterator.'
+    },
+    {
+        id: 'j_h2', title: 'Object-Oriented Scope Hiding', difficulty: 'Hard',
+        description: 'Fix the setter method so it assigns the parameter to the class field instead of shadowing it.',
+        buggyCode: 'public class Main {\n    int value = 0;\n    public void setValue(int value) {\n        value = value;\n    }\n    public static void main(String[] args) {\n        Main obj = new Main();\n        obj.setValue(10);\n        System.out.print(obj.value);\n    }\n}',
+        correctCode: 'public class Main {\n    int value = 0;\n    public void setValue(int value) {\n        this.value = value;\n    }\n    public static void main(String[] args) {\n        Main obj = new Main();\n        obj.setValue(10);\n        System.out.print(obj.value);\n    }\n}',
+        testInput: '', expectedOutput: '10',
+        explanation: 'Because the parameter name is the same as the field name, `value = value` only reassigns the parameter to itself. You must use `this.value` to target the class field.'
+    },
+    {
+        id: 'j_h3', title: 'Null Reference Logic', difficulty: 'Hard',
+        description: 'Fix the safe check so it doesn\'t throw a NullPointerException.',
+        buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        String text = null;\n        if (text.equals("hello") && text != null) {\n            System.out.print("Hi");\n        } else {\n            System.out.print("Null");\n        }\n    }\n}',
+        correctCode: 'public class Main {\n    public static void main(String[] args) {\n        String text = null;\n        if (text != null && text.equals("hello")) {\n            System.out.print("Hi");\n        } else {\n            System.out.print("Null");\n        }\n    }\n}',
+        testInput: '', expectedOutput: 'Null',
+        explanation: 'Because `&&` evaluates left-to-right, calling `text.equals()` on a null reference throws an error before it reaches the null check. Order matters.'
+    },
+    {
+        id: 'j_h4', title: 'Stack Overflow Recursion', difficulty: 'Hard',
+        description: 'Fix the recursive sum method so it terminates properly.',
+        buggyCode: 'public class Main {\n    static int sum(int n) {\n        if (n == 0) return 0;\n        return n + sum(n);\n    }\n    public static void main(String[] args) {\n        System.out.print(sum(3));\n    }\n}',
+        correctCode: 'public class Main {\n    static int sum(int n) {\n        if (n == 0) return 0;\n        return n + sum(n - 1);\n    }\n    public static void main(String[] args) {\n        System.out.print(sum(3));\n    }\n}',
+        testInput: '', expectedOutput: '6',
+        explanation: 'The recursive call `sum(n)` did not decrement `n`, causing an infinite recursion loop.'
+    }
 ];
 
-const cppQuestions = [
-    // 2 Easy
-    { id: 'c1', title: 'Missing Header', difficulty: 'Easy', description: 'Fix the compilation error regarding std::string.', buggyCode: '#include <iostream>\n\nint main() {\n    std::string text = "Hello";\n    std::cout << text << std::endl;\n    return 0;\n}', expectedOutput: '"Hello"', testInput: '', solution: '#include <iostream>\n#include <string>\n\nint main() {\n    std::string text = "Hello";\n    std::cout << text << std::endl;\n    return 0;\n}' },
-    { id: 'c2', title: 'Uninitialized Variable', difficulty: 'Easy', description: 'Fix the uninitialized variable to reliably output the sum.', buggyCode: '#include <iostream>\nusing namespace std;\n\nint main() {\n    int sum;\n    for(int i = 1; i <= 5; i++) {\n        sum += i;\n    }\n    cout << sum << endl;\n    return 0;\n}', expectedOutput: '"15"', testInput: '', solution: '#include <iostream>\nusing namespace std;\n\nint main() {\n    int sum = 0;\n    for(int i = 1; i <= 5; i++) {\n        sum += i;\n    }\n    cout << sum << endl;\n    return 0;\n}' },
-
-    // 4 Medium
-    { id: 'c3', title: 'Selection Sort Logic', difficulty: 'Medium', description: 'Fix the nested loop bounding logic so selection sort correctly sorts the array.', buggyCode: '#include <iostream>\nusing namespace std;\n\nint main() {\n    int arr[] = {64, 25, 12, 22, 11};\n    int n = 5;\n    for (int i = 0; i < n; i++) {\n        int min_idx = i;\n        for (int j = i; j < n; j++) {\n            if (arr[j] < arr[min_idx])\n                min_idx = j;\n        }\n        int temp = arr[i];\n        arr[i] = arr[min_idx];\n        // missing swap assignment\n    }\n    for(int x : arr) cout << x << " ";\n    return 0;\n}', expectedOutput: '"11 12 22 25 64 "', testInput: '', solution: '#include <iostream>\nusing namespace std;\n\nint main() {\n    int arr[] = {64, 25, 12, 22, 11};\n    int n = 5;\n    for (int i = 0; i < n - 1; i++) {\n        int min_idx = i;\n        for (int j = i + 1; j < n; j++) {\n            if (arr[j] < arr[min_idx])\n                min_idx = j;\n        }\n        int temp = arr[i];\n        arr[i] = arr[min_idx];\n        arr[min_idx] = temp;\n    }\n    for(int x : arr) cout << x << " ";\n    return 0;\n}' },
-    { id: 'c4', title: 'Reference Reassignment', difficulty: 'Medium', description: 'Fix the logic so the actual variables are swapped. C++ references cannot be reseated!', buggyCode: '#include <iostream>\nusing namespace std;\n\nvoid swapValues(int& a, int& b) {\n    int& temp = a;\n    a = b;\n    b = temp;\n}\n\nint main() {\n    int x = 5, y = 10;\n    swapValues(x, y);\n    cout << x << " " << y << endl;\n    return 0;\n}', expectedOutput: '"10 5"', testInput: '', solution: '#include <iostream>\nusing namespace std;\n\nvoid swapValues(int& a, int& b) {\n    int temp = a;\n    a = b;\n    b = temp;\n}\n\nint main() {\n    int x = 5, y = 10;\n    swapValues(x, y);\n    cout << x << " " << y << endl;\n    return 0;\n}' },
-    { id: 'c5', title: 'Array Out of Bounds', difficulty: 'Medium', description: 'Fix the loop condition to avoid accessing memory outside the array bounds.', buggyCode: '#include <iostream>\nusing namespace std;\n\nint main() {\n    int arr[3] = {10, 20, 30};\n    for(int i = 0; i <= 3; i++) {\n        cout << arr[i] << " ";\n    }\n    return 0;\n}', expectedOutput: '"10 20 30 "', testInput: '', solution: '#include <iostream>\nusing namespace std;\n\nint main() {\n    int arr[3] = {10, 20, 30};\n    for(int i = 0; i < 3; i++) {\n        cout << arr[i] << " ";\n    }\n    return 0;\n}' },
-    { id: 'c6', title: 'Dangling Reference', difficulty: 'Medium', description: 'Fix the function returning a reference to a local variable which gets destroyed upon return.', buggyCode: '#include <iostream>\nusing namespace std;\n\nint& getNumber() {\n    int n = 10;\n    return n;\n}\n\nint main() {\n    int& ref = getNumber();\n    cout << ref << endl;\n    return 0;\n}', expectedOutput: '"10"', testInput: '', solution: '#include <iostream>\nusing namespace std;\n\nint getNumber() {\n    int n = 10;\n    return n;\n}\n\nint main() {\n    int val = getNumber();\n    cout << val << endl;\n    return 0;\n}' },
-
-    // 4 Hard
-    { id: 'c7', title: 'Reverse Linked List', difficulty: 'Hard', description: 'Fix the logic error in the recursive linked list reversal.', buggyCode: '#include <iostream>\nusing namespace std;\n\nstruct Node { int data; Node* next; };\n\nNode* reverse(Node* head) {\n    if (head == nullptr || head->next == nullptr) return head;\n    Node* rest = reverse(head->next);\n    head->next = nullptr;\n    rest->next = head;\n    return rest;\n}\n\nint main() {\n    Node* head = new Node{1, new Node{2, new Node{3, nullptr}}};\n    head = reverse(head);\n    cout << head->data << endl;\n    return 0;\n}', expectedOutput: '"3"', testInput: '', solution: '#include <iostream>\nusing namespace std;\n\nstruct Node { int data; Node* next; };\n\nNode* reverse(Node* head) {\n    if (head == nullptr || head->next == nullptr) return head;\n    Node* rest = reverse(head->next);\n    head->next->next = head;\n    head->next = nullptr;\n    return rest;\n}\n\nint main() {\n    Node* head = new Node{1, new Node{2, new Node{3, nullptr}}};\n    head = reverse(head);\n    cout << head->data << endl;\n    return 0;\n}' },
-    { id: 'c8', title: 'Double Free Memory', difficulty: 'Hard', description: 'Fix the Rule of Three violation. The default copy constructor causes a double free runtime heap corruption.', buggyCode: '#include <iostream>\nusing namespace std;\n\nclass Container {\n    int* data;\npublic:\n    Container(int val) { data = new int(val); }\n    ~Container() { delete data; cout << "Del "; }\n};\n\nint main() {\n    Container c1(42);\n    Container c2 = c1;\n    return 0;\n}', expectedOutput: '"Del Del "', testInput: '', solution: '#include <iostream>\nusing namespace std;\n\nclass Container {\n    int* data;\npublic:\n    Container(int val) { data = new int(val); }\n    Container(const Container& other) { data = new int(*other.data); }\n    ~Container() { delete data; cout << "Del "; }\n};\n\nint main() {\n    Container c1(42);\n    Container c2 = c1;\n    return 0;\n}' },
-    { id: 'c9', title: 'Vector Growth Iteration', difficulty: 'Hard', description: 'Fix the infinite loop caused by modifying a vector while iterating over it via index.', buggyCode: '#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    vector<int> vec = {1, 2, 3};\n    for(int i = 0; i < vec.size(); i++) {\n        if(vec[i] % 2 != 0) {\n            vec.push_back(vec[i] * 2);\n        }\n    }\n    cout << vec.size() << endl;\n    return 0;\n}', expectedOutput: '"5"', testInput: '', solution: '#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    vector<int> vec = {1, 2, 3};\n    int originalSize = vec.size();\n    for(int i = 0; i < originalSize; i++) {\n        if(vec[i] % 2 != 0) {\n            vec.push_back(vec[i] * 2);\n        }\n    }\n    cout << vec.size() << endl;\n    return 0;\n}' },
-    { id: 'c10', title: 'Virtual Destructor', difficulty: 'Hard', description: 'Fix the memory leak caused by lacking a virtual destructor in polymorphism.', buggyCode: '#include <iostream>\nclass Base {\npublic:\n    Base() { std::cout << "B"; }\n    ~Base() { std::cout << "~B"; }\n};\nclass Derived : public Base {\npublic:\n    Derived() { std::cout << "D"; }\n    ~Derived() { std::cout << "~D"; }\n};\nint main() {\n    Base* ptr = new Derived();\n    delete ptr;\n    return 0;\n}', expectedOutput: '"BD~D~B"', testInput: '', solution: '#include <iostream>\nclass Base {\npublic:\n    Base() { std::cout << "B"; }\n    virtual ~Base() { std::cout << "~B"; }\n};\nclass Derived : public Base {\npublic:\n    Derived() { std::cout << "D"; }\n    ~Derived() { std::cout << "~D"; }\n};\nint main() {\n    Base* ptr = new Derived();\n    delete ptr;\n    return 0;\n}' }
+export const cppQuestions = [
+    // Easy (2)
+    {
+        id: 'c_e1', title: 'Missing Semicolon (C++)', difficulty: 'Easy',
+        description: 'Fix the compilation error.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nint main() {\n    cout << "Hello" << endl\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nint main() {\n    cout << "Hello" << endl;\n    return 0;\n}',
+        testInput: '', expectedOutput: 'Hello\n',
+        explanation: 'A semicolon is required at the end of every statement in C++.'
+    },
+    {
+        id: 'c_e2', title: 'Cout Typo', difficulty: 'Easy',
+        description: 'Fix the stream mismatch.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nint main() {\n    cout >> "Arena" >> endl;\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nint main() {\n    cout << "Arena" << endl;\n    return 0;\n}',
+        testInput: '', expectedOutput: 'Arena\n',
+        explanation: 'The insertion operator `<<` is used with `cout`, while the extraction operator `>>` is for `cin`.'
+    },
+    // Medium (4)
+    {
+        id: 'c_m1', title: 'Uninitialized Variable', difficulty: 'Medium',
+        description: 'Fix the uninitialized accumulator giving garbage sum outputs.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int sum;\n    for(int i = 1; i <= 3; i++) sum += i;\n    cout << sum;\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int sum = 0;\n    for(int i = 1; i <= 3; i++) sum += i;\n    cout << sum;\n    return 0;\n}',
+        testInput: '', expectedOutput: '6',
+        explanation: 'In C++, local variables are not initialized automatically. `sum` contained garbage memory, so applying `+=` corrupted the output.'
+    },
+    {
+        id: 'c_m2', title: 'Array Bounds Error', difficulty: 'Medium',
+        description: 'Fix the loop so it does not read outside the array boundaries.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int arr[3] = {10, 20, 30};\n    for(int i = 0; i <= 3; i++) cout << arr[i] << " ";\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int arr[3] = {10, 20, 30};\n    for(int i = 0; i < 3; i++) cout << arr[i] << " ";\n    return 0;\n}',
+        testInput: '', expectedOutput: '10 20 30 ',
+        explanation: 'An array of size 3 only has indices 0, 1, and 2. Attempting to access index 3 goes out of bounds.'
+    },
+    {
+        id: 'c_m3', title: 'Missing Return', difficulty: 'Medium',
+        description: 'Fix the function so it safely returns the multiplied value.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nint multiply(int a, int b) {\n    int res = a * b;\n}\nint main() {\n    cout << multiply(2, 4);\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nint multiply(int a, int b) {\n    int res = a * b;\n    return res;\n}\nint main() {\n    cout << multiply(2, 4);\n    return 0;\n}',
+        testInput: '', expectedOutput: '8',
+        explanation: 'Functions declaring a non-void return type in C++ must return a valid value of that type.'
+    },
+    {
+        id: 'c_m4', title: 'Logical Assignment Mistake', difficulty: 'Medium',
+        description: 'Fix the logic branch so it checks equality rather than assigning a value.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int val = 5;\n    if (val = 10) cout << "Ten";\n    else cout << "Five";\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int val = 5;\n    if (val == 10) cout << "Ten";\n    else cout << "Five";\n    return 0;\n}',
+        testInput: '', expectedOutput: 'Five',
+        explanation: '`val = 10` is an assignment that returns 10, which evaluates to true. You must use `val == 10` for an equality check.'
+    },
+    // Hard (4)
+    {
+        id: 'c_h1', title: 'Memory Leak (Pointers)', difficulty: 'Hard',
+        description: 'Fix the memory leak caused by un-freed heap allocation.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nvoid allocate() {\n    int* ptr = new int(5);\n    cout << *ptr;\n}\nint main() {\n    allocate();\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nvoid allocate() {\n    int* ptr = new int(5);\n    cout << *ptr;\n    delete ptr;\n}\nint main() {\n    allocate();\n    return 0;\n}',
+        testInput: '', expectedOutput: '5',
+        explanation: 'Memory allocated using `new` persists until explicitly freed with `delete`. Failing to delete it causes a memory leak.'
+    },
+    {
+        id: 'c_h2', title: 'Dangling Reference', difficulty: 'Hard',
+        description: 'Returning a reference to a local variable leads to unpredictable behavior when the stack frame pops.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nint& getNum() {\n    int n = 42;\n    return n;\n}\nint main() {\n    cout << getNum();\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nint getNum() {\n    int n = 42;\n    return n;\n}\nint main() {\n    cout << getNum();\n    return 0;\n}',
+        testInput: '', expectedOutput: '42',
+        explanation: '`n` is a local variable whose memory is freed when `getNum()` returns. Returning a reference to it creates a dangling reference. Return by value instead.'
+    },
+    {
+        id: 'c_h3', title: 'Nested Loop Complexity', difficulty: 'Hard',
+        description: 'Fix the sorting logic so it compares items properly rather than rewriting them incorrectly.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int arr[] = {3, 1, 2};\n    for(int i=0; i<3; i++) {\n        for(int j=0; j<3; j++) {\n            if(arr[i] < arr[j]) {\n                arr[i] = arr[j];\n            }\n        }\n    }\n    for(int x: arr) cout << x;\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int arr[] = {3, 1, 2};\n    for(int i=0; i<3; i++) {\n        for(int j=i+1; j<3; j++) {\n            if(arr[i] > arr[j]) {\n                int temp = arr[i];\n                arr[i] = arr[j];\n                arr[j] = temp;\n            }\n        }\n    }\n    for(int x: arr) cout << x;\n    return 0;\n}',
+        testInput: '', expectedOutput: '123',
+        explanation: 'The original loop repeatedly destroyed values without using a temporary variable for swapping, corrupting the array.'
+    },
+    {
+        id: 'c_h4', title: 'Endless Recursion Error', difficulty: 'Hard',
+        description: 'Fix the recursive countdown so it terminates gracefully at 0.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nvoid countdown(int n) {\n    if (n == 0) return;\n    cout << n;\n    countdown(n);\n}\nint main() {\n    countdown(3);\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nvoid countdown(int n) {\n    if (n == 0) return;\n    cout << n;\n    countdown(n - 1);\n}\nint main() {\n    countdown(3);\n    return 0;\n}',
+        testInput: '', expectedOutput: '321',
+        explanation: 'The recursive call `countdown(n)` passed the same value continuously, resulting in an infinite recursion stack overflow.'
+    }
 ];
 
-const questionBank = {
-    'Python': pythonQuestions,
-    'Java': javaQuestions,
-    'C++': cppQuestions
-};
-
-// Seeded random number generator for generating the same sequence for an event code
+// Seeded random number generator for generating the same sequence for a specific student's exam session
 function seedRandom(seed) {
     let h = 0xdeadbeef;
     for (let i = 0; i < seed.length; i++)
@@ -73,39 +270,28 @@ function seedRandom(seed) {
     }
 }
 
-// Function to get exactly 2 Easy, 4 Medium, 4 Hard questions
-export const getQuestionsForExam = (language, eventCode) => {
-    const bank = questionBank[language] || questionBank['Python'];
+export const getQuestionsForExam = (language, eventCode, studentId) => {
+    let baseBank = [];
+    if (language === 'Python') baseBank = pythonQuestions;
+    else if (language === 'Java') baseBank = javaQuestions;
+    else if (language === 'C++') baseBank = cppQuestions;
+    else baseBank = pythonQuestions;
 
-    const easy = bank.filter(q => q.difficulty === 'Easy');
-    const medium = bank.filter(q => q.difficulty === 'Medium');
-    const hard = bank.filter(q => q.difficulty === 'Hard');
+    // We statically define exactly 2, 4, and 4 in each language list.
+    const easy = baseBank.filter(q => q.difficulty === 'Easy').slice(0, 2);
+    const medium = baseBank.filter(q => q.difficulty === 'Medium').slice(0, 4);
+    const hard = baseBank.filter(q => q.difficulty === 'Hard').slice(0, 4);
 
-    // Pseudo-random generator tied to eventCode + language
-    const rng = seedRandom(eventCode + language);
+    const combined = [...easy, ...medium, ...hard];
 
-    const getRandomSubset = (arr, count) => {
-        let copy = [...arr];
-        let result = [];
-        for (let i = 0; i < count; i++) {
-            if (copy.length === 0) break;
-            const index = rng() % copy.length;
-            result.push(copy.splice(index, 1)[0]);
-        }
-        return result;
-    };
-
-    const selectedEasy = getRandomSubset(easy, 2);
-    const selectedMedium = getRandomSubset(medium, 4);
-    const selectedHard = getRandomSubset(hard, 4);
-
-    const combined = [...selectedEasy, ...selectedMedium, ...selectedHard];
-
-    // Shuffle the final combination
-    for (let i = combined.length - 1; i > 0; i--) {
+    // Shuffle using seeded random tied to the specific student's exam
+    const rng = seedRandom((eventCode || 'default') + '_' + (studentId || 'default'));
+    
+    const shuffled = [...combined];
+    for (let i = shuffled.length - 1; i > 0; i--) {
         const j = rng() % (i + 1);
-        [combined[i], combined[j]] = [combined[j], combined[i]];
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
-    return combined;
+    return shuffled;
 };
