@@ -7,6 +7,7 @@ import ExamArea from './pages/ExamArea';
 import ResultPage from './pages/ResultPage';
 import DisqualifiedPage from './pages/DisqualifiedPage';
 import LandingPage from './pages/LandingPage';
+import WaitingRoom from './pages/WaitingRoom';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
 
             {/* Student Routes */}
             <Route path="/join" element={<StudentJoin />} />
+            <Route path="/waiting-room" element={<WaitingRoom />} />
             <Route path="/exam/:eventCode/:studentId" element={<ExamArea />} />
             <Route path="/result/:eventCode/:studentId" element={<ResultPage />} />
             <Route path="/disqualified/:eventCode/:studentId" element={<DisqualifiedPage />} />

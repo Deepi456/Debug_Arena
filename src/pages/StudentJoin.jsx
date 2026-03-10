@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { UserPlus, ArrowRight, RefreshCw } from 'lucide-react';
-import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function StudentJoin() {
@@ -35,29 +35,28 @@ export default function StudentJoin() {
                 return;
             }
 
-            const docRef = await addDoc(collection(db, 'events', code, 'participants'), {
-                name: formData.name,
-                email: formData.email,
-                language: formData.language,
-                score: 0,
-                status: 'active',
-                timeTaken: 0,
-                questionsCompleted: 0,
-                warnings: 0,
-                joinedAt: Date.now()
+            await updateDoc(eventRef, {
+                participants: arrayUnion({
+                    name: formData.name,
+                    email: formData.email,
+                    language: formData.language,
+                    score: 0,
+                    joinedAt: Date.now()
+                })
             });
 
             localStorage.setItem('eventCode', code);
             localStorage.setItem('debugArenaSession', JSON.stringify({
                 role: 'participant',
                 eventCode: code,
-                studentId: docRef.id,
+                studentId: formData.email,
                 name: formData.name,
                 email: formData.email,
                 language: formData.language
             }));
 
-            navigate(`/exam/${code}/${docRef.id}`);
+            // Since user specifically said navigate('/waiting-room') and we want to precisely respect their snippet:
+            navigate("/waiting-room");
         } catch (error) {
             console.error(error);
             setError('Failed to join event. Try again.');

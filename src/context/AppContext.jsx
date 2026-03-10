@@ -29,13 +29,13 @@ export const AppProvider = ({ children }) => {
     }, []);
 
     const createEvent = async (hostName) => {
-        const eventCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const eventRef = doc(db, 'events', eventCode);
+        const generatedCode = Math.random().toString(36).substring(2, 8);
+        const eventCode = generatedCode.trim().toUpperCase();
 
-        await setDoc(eventRef, {
-            hostName,
-            status: 'waiting',
+        await setDoc(doc(db, 'events', eventCode), {
             createdAt: Date.now(),
+            hostName: hostName,
+            status: 'waiting'
         });
 
         return eventCode;
