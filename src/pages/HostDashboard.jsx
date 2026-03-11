@@ -43,6 +43,12 @@ export default function HostDashboard() {
                 <h2 className="text-3xl font-bold text-center text-white mb-2">Create Event</h2>
                 <p className="text-gray-400 text-center mb-8">Set up your debugging arena</p>
 
+                {error && (
+                    <div className="bg-red-500/10 border border-red-500/50 text-red-500 px-4 py-3 rounded-xl mb-6 text-center text-sm">
+                        {error}
+                    </div>
+                )}
+
                 <form onSubmit={handleCreate} className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
