@@ -35,12 +35,14 @@ export default function StudentJoin() {
                 return;
             }
 
-            await setDoc(doc(db, 'events', code, 'participants', formData.email), {
-                name: formData.name,
-                email: formData.email,
-                language: formData.language,
-                score: 0,
-                joinedAt: Date.now()
+            await updateDoc(eventRef, {
+                participants: arrayUnion({
+                    name: formData.name,
+                    email: formData.email,
+                    language: formData.language,
+                    score: 0,
+                    joinedAt: Date.now()
+                })
             });
 
             localStorage.setItem('eventCode', code);
