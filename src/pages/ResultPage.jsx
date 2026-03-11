@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { Trophy, Clock, Medal, Home, RefreshCw } from 'lucide-react';
 import { db } from '../firebase';
@@ -8,11 +8,14 @@ import { getQuestionsForExam } from '../utils/questions';
 import Editor from '@monaco-editor/react';
 
 export default function ResultPage() {
-    const { eventCode, studentId } = useParams();
     const navigate = useNavigate();
     const { events } = useAppContext();
     const [student, setStudent] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    const eventCode = localStorage.getItem('eventCode');
+    const studentId = localStorage.getItem('debugArenaSession') ? JSON.parse(localStorage.getItem('debugArenaSession')).studentId : null;
+
 
     const event = events?.[eventCode];
 

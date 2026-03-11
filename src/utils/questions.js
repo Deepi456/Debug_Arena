@@ -53,36 +53,36 @@ export const pythonQuestions = [
     },
     // Hard (4)
     {
-        id: 'p_h1', title: 'Recursive Base Case', difficulty: 'Hard',
-        description: 'Fix the recursive sum function to prevent it from failing with maximum recursion depth.',
-        buggyCode: 'def recursive_sum(n):\n    if n == 0:\n        return 1\n    return n + recursive_sum(n - 1)',
-        correctCode: 'def recursive_sum(n):\n    if n <= 0:\n        return 0\n    return n + recursive_sum(n - 1)',
-        testInput: '5', expectedOutput: '15',
-        explanation: 'The base case returned 1 instead of 0, and didn\'t handle negative boundaries properly, altering the sum.'
+        id: 'p_h1', title: 'Recursive DP Target Sum', difficulty: 'Hard',
+        description: 'Fix the recursive function to correctly compute combinations to reach a target sum without infinite recursion or incorrect memoization.',
+        buggyCode: 'def count_ways(target, memo={}):\n    if target == 0:\n        return 1\n    if target < 0:\n        return 0\n    if target in memo:\n        return memo[target]\n    \n    memo[target] = count_ways(target - 1) + count_ways(target - 2)\n    return memo[target]',
+        correctCode: 'def count_ways(target, memo=None):\n    if memo is None:\n        memo = {}\n    if target == 0:\n        return 1\n    if target < 0:\n        return 0\n    if target in memo:\n        return memo[target]\n    \n    memo[target] = count_ways(target - 1, memo) + count_ways(target - 2, memo)\n    return memo[target]',
+        testInput: '4', expectedOutput: '5',
+        explanation: 'Default mutable arguments like memo={} share state across all calls, causing incorrect results on subsequent executions. Also, the recursive calls omitted the memo argument entirely, rebuilding it uselessly.'
     },
     {
-        id: 'p_h2', title: 'List Iteration Modification', difficulty: 'Hard',
-        description: 'Iterating and removing items from the list causes it to skip elements.',
-        buggyCode: 'def remove_evens(lst):\n    for num in lst:\n        if num % 2 == 0:\n            lst.remove(num)\n    return lst',
-        correctCode: 'def remove_evens(lst):\n    return [num for num in lst if num % 2 != 0]',
-        testInput: '[2, 4, 6, 8, 5]', expectedOutput: '[5]',
-        explanation: 'Modifying a list while iterating over it shifts indices, causing elements to be skipped. A list comprehension safely creates a new list.'
+        id: 'p_h2', title: 'Nested Loop Anagram Grouping', difficulty: 'Hard',
+        description: 'Fix the nested loop grouping logic to correctly map anagrams from a list of strings.',
+        buggyCode: 'def group_anagrams(words):\n    res = []\n    for w in words:\n        added = False\n        for group in res:\n            if sorted(group[0]) == sorted(w):\n                group.append(w)\n        if not added:\n            res.append([w])\n    return res',
+        correctCode: 'def group_anagrams(words):\n    res = []\n    for w in words:\n        added = False\n        for group in res:\n            if sorted(group[0]) == sorted(w):\n                group.append(w)\n                added = True\n                break\n        if not added:\n            res.append([w])\n    return res',
+        testInput: '["eat", "tea", "bat"]', expectedOutput: '[[\'eat\', \'tea\'], [\'bat\']]',
+        explanation: 'The loop forgot to set `added = True` and break when a match was found, causing the word to be added as a duplicate new group anyway.'
     },
     {
-        id: 'p_h3', title: 'Default Mutable Arguments', difficulty: 'Hard',
-        description: 'Fix the function so it doesn\'t share the same list instance across multiple calls.',
-        buggyCode: 'def append_to_list(val, lst=[]):\n    lst.append(val)\n    return lst',
-        correctCode: 'def append_to_list(val, lst=None):\n    if lst is None:\n        lst = []\n    lst.append(val)\n    return lst',
-        testInput: '5', expectedOutput: '[5]',
-        explanation: 'Default arguments are evaluated once in Python. A mutable default like `lst=[]` retains its state between function calls. Use `None` instead.'
+        id: 'p_h3', title: 'Edge Case Palindrome', difficulty: 'Hard',
+        description: 'Fix the two-pointer loop condition to correctly identify valid palindromes, correctly skipping non-alphanumeric characters.',
+        buggyCode: 'def is_palindrome(s):\n    left, right = 0, len(s) - 1\n    while left < right:\n        if not s[left].isalnum():\n            left += 1\n        if not s[right].isalnum():\n            right -= 1\n        if s[left].lower() != s[right].lower():\n            return False\n        left += 1\n        right -= 1\n    return True',
+        correctCode: 'def is_palindrome(s):\n    left, right = 0, len(s) - 1\n    while left < right:\n        if not s[left].isalnum():\n            left += 1\n            continue\n        if not s[right].isalnum():\n            right -= 1\n            continue\n        if s[left].lower() != s[right].lower():\n            return False\n        left += 1\n        right -= 1\n    return True',
+        testInput: '"A man, a plan, a canal: Panama"', expectedOutput: 'True',
+        explanation: 'Missing `continue` after pointer adjustments means it immediately attempts to compare characters before re-checking if the adjusted pointers still point to non-alphanumeric characters or have crossed.'
     },
     {
-        id: 'p_h4', title: 'Nested Loop Duplications', difficulty: 'Hard',
-        description: 'Fix the nested loop so it sums the matrix elements correctly without double counting.',
-        buggyCode: 'def matrix_sum(matrix):\n    total = 0\n    for row in matrix:\n        for col in matrix:\n            total += col[0]\n    return total',
-        correctCode: 'def matrix_sum(matrix):\n    total = 0\n    for row in matrix:\n        for val in row:\n            total += val\n    return total',
-        testInput: '[[1, 2], [3, 4]]', expectedOutput: '10',
-        explanation: 'The inner loop incorrectly iterated over `matrix` again instead of `row`, summing incorrect columns repeatedly.'
+        id: 'p_h4', title: 'Binary Search Edge Condition', difficulty: 'Hard',
+        description: 'Fix the binary search implementation to correctly find the first occurrence of a target avoiding infinite loops.',
+        buggyCode: 'def find_first(arr, target):\n    left, right = 0, len(arr) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if arr[mid] == target:\n            right = mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return left if arr[left] == target else -1',
+        correctCode: 'def find_first(arr, target):\n    if not arr:\n        return -1\n    left, right = 0, len(arr) - 1\n    while left < right:\n        mid = (left + right) // 2\n        if arr[mid] == target:\n            right = mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return left if left < len(arr) and arr[left] == target else -1',
+        testInput: '[1, 2, 2, 2, 3], 2', expectedOutput: '1',
+        explanation: '`while left <= right:` combined with `right = mid` will cause an infinite loop when left == right. It should be `while left < right` with bounds checking on return.'
     }
 ];
 
@@ -139,36 +139,36 @@ export const javaQuestions = [
     },
     // Hard (4)
     {
-        id: 'j_h1', title: 'Concurrent Modification', difficulty: 'Hard',
-        description: 'Removing an element during a standard for-each loop throws a ConcurrentModificationException.',
-        buggyCode: 'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));\n        for (String s : list) {\n            if (s.equals("B")) list.remove(s);\n        }\n        System.out.print(list.size());\n    }\n}',
-        correctCode: 'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));\n        list.removeIf(s -> s.equals("B"));\n        System.out.print(list.size());\n    }\n}',
+        id: 'j_h1', title: 'Class Object Reference Error', difficulty: 'Hard',
+        description: 'Fix the class constructor logic where shallow copying causes shared mutations in an object wrapper.',
+        buggyCode: 'class Wrapper {\n    int[] data;\n    Wrapper(int[] arr) {\n        this.data = arr;\n    }\n}\npublic class Main {\n    public static void main(String[] args) {\n        int[] arr = {1, 2, 3};\n        Wrapper w1 = new Wrapper(arr);\n        Wrapper w2 = new Wrapper(arr);\n        w1.data[0] = 99;\n        System.out.print(w2.data[0]);\n    }\n}',
+        correctCode: 'class Wrapper {\n    int[] data;\n    Wrapper(int[] arr) {\n        this.data = arr.clone();\n    }\n}\npublic class Main {\n    public static void main(String[] args) {\n        int[] arr = {1, 2, 3};\n        Wrapper w1 = new Wrapper(arr);\n        Wrapper w2 = new Wrapper(arr);\n        w1.data[0] = 99;\n        System.out.print(w2.data[0]);\n    }\n}',
+        testInput: '', expectedOutput: '1',
+        explanation: 'Assigning the array directly makes both Wrapper instances share the same memory reference. Mutating one mutates the other. `.clone()` creates a necessary deep copy.'
+    },
+    {
+        id: 'j_h2', title: 'Data Structure Usage', difficulty: 'Hard',
+        description: 'Fix the HashMap usage in the loop that incorrectly overwrites entries when counting character frequencies.',
+        buggyCode: 'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        String s = "hello";\n        Map<Character, Integer> map = new HashMap<>();\n        for (char c : s.toCharArray()) {\n            if (map.containsKey(c)) {\n                map.put(c, map.get(c));\n            } else {\n                map.put(c, 1);\n            }\n        }\n        System.out.print(map.get(\'l\'));\n    }\n}',
+        correctCode: 'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        String s = "hello";\n        Map<Character, Integer> map = new HashMap<>();\n        for (char c : s.toCharArray()) {\n            if (map.containsKey(c)) {\n                map.put(c, map.get(c) + 1);\n            } else {\n                map.put(c, 1);\n            }\n        }\n        System.out.print(map.get(\'l\'));\n    }\n}',
         testInput: '', expectedOutput: '2',
-        explanation: 'You cannot remove elements directly from a collection while using a for-each loop. Use `.removeIf()` or an Iterator.'
+        explanation: 'The code replaced the character count with its current count `map.get(c)` instead of incrementing it `map.get(c) + 1`.'
     },
     {
-        id: 'j_h2', title: 'Object-Oriented Scope Hiding', difficulty: 'Hard',
-        description: 'Fix the setter method so it assigns the parameter to the class field instead of shadowing it.',
-        buggyCode: 'public class Main {\n    int value = 0;\n    public void setValue(int value) {\n        value = value;\n    }\n    public static void main(String[] args) {\n        Main obj = new Main();\n        obj.setValue(10);\n        System.out.print(obj.value);\n    }\n}',
-        correctCode: 'public class Main {\n    int value = 0;\n    public void setValue(int value) {\n        this.value = value;\n    }\n    public static void main(String[] args) {\n        Main obj = new Main();\n        obj.setValue(10);\n        System.out.print(obj.value);\n    }\n}',
-        testInput: '', expectedOutput: '10',
-        explanation: 'Because the parameter name is the same as the field name, `value = value` only reassigns the parameter to itself. You must use `this.value` to target the class field.'
+        id: 'j_h3', title: 'Missing Recursive Base Condition', difficulty: 'Hard',
+        description: 'Fix the Depth First Search function to avoid a StackOverflowError by adding a tracking mechanism.',
+        buggyCode: 'import java.util.*;\npublic class Main {\n    static void dfs(int node, Map<Integer, List<Integer>> graph) {\n        System.out.print(node + " ");\n        if (!graph.containsKey(node)) return;\n        for (int neighbor : graph.get(node)) {\n            dfs(neighbor, graph);\n        }\n    }\n    public static void main(String[] args) {\n        Map<Integer, List<Integer>> g = new HashMap<>();\n        g.put(1, Arrays.asList(2));\n        g.put(2, Arrays.asList(1));\n        dfs(1, g);\n    }\n}',
+        correctCode: 'import java.util.*;\npublic class Main {\n    static void dfs(int node, Map<Integer, List<Integer>> graph, Set<Integer> visited) {\n        if (visited.contains(node)) return;\n        visited.add(node);\n        System.out.print(node + " ");\n        if (!graph.containsKey(node)) return;\n        for (int neighbor : graph.get(node)) {\n            dfs(neighbor, graph, visited);\n        }\n    }\n    public static void main(String[] args) {\n        Map<Integer, List<Integer>> g = new HashMap<>();\n        g.put(1, Arrays.asList(2));\n        g.put(2, Arrays.asList(1));\n        dfs(1, g, new HashSet<>());\n    }\n}',
+        testInput: '', expectedOutput: '1 2 ',
+        explanation: 'Graphs with cycles require tracking visited nodes. The missing base condition `if (visited.contains(...))` causes an infinite loop bouncing between nodes 1 and 2.'
     },
     {
-        id: 'j_h3', title: 'Null Reference Logic', difficulty: 'Hard',
-        description: 'Fix the safe check so it doesn\'t throw a NullPointerException.',
-        buggyCode: 'public class Main {\n    public static void main(String[] args) {\n        String text = null;\n        if (text.equals("hello") && text != null) {\n            System.out.print("Hi");\n        } else {\n            System.out.print("Null");\n        }\n    }\n}',
-        correctCode: 'public class Main {\n    public static void main(String[] args) {\n        String text = null;\n        if (text != null && text.equals("hello")) {\n            System.out.print("Hi");\n        } else {\n            System.out.print("Null");\n        }\n    }\n}',
-        testInput: '', expectedOutput: 'Null',
-        explanation: 'Because `&&` evaluates left-to-right, calling `text.equals()` on a null reference throws an error before it reaches the null check. Order matters.'
-    },
-    {
-        id: 'j_h4', title: 'Stack Overflow Recursion', difficulty: 'Hard',
-        description: 'Fix the recursive sum method so it terminates properly.',
-        buggyCode: 'public class Main {\n    static int sum(int n) {\n        if (n == 0) return 0;\n        return n + sum(n);\n    }\n    public static void main(String[] args) {\n        System.out.print(sum(3));\n    }\n}',
-        correctCode: 'public class Main {\n    static int sum(int n) {\n        if (n == 0) return 0;\n        return n + sum(n - 1);\n    }\n    public static void main(String[] args) {\n        System.out.print(sum(3));\n    }\n}',
-        testInput: '', expectedOutput: '6',
-        explanation: 'The recursive call `sum(n)` did not decrement `n`, causing an infinite recursion loop.'
+        id: 'j_h4', title: 'Incorrect Return Logic in Loop', difficulty: 'Hard',
+        description: 'Fix the method to find the maximum element so it evaluates properly and does not return prematurely.',
+        buggyCode: 'public class Main {\n    static int findMax(int[] arr) {\n        int max = Integer.MIN_VALUE;\n        for (int i = 0; i < arr.length; i++) {\n            if (arr[i] > max) {\n                max = arr[i];\n                return max;\n            }\n        }\n        return max;\n    }\n    public static void main(String[] args) {\n        int[] arr = {1, 5, 2, 9};\n        System.out.print(findMax(arr));\n    }\n}',
+        correctCode: 'public class Main {\n    static int findMax(int[] arr) {\n        int max = Integer.MIN_VALUE;\n        for (int i = 0; i < arr.length; i++) {\n            if (arr[i] > max) {\n                max = arr[i];\n            }\n        }\n        return max;\n    }\n    public static void main(String[] args) {\n        int[] arr = {1, 5, 2, 9};\n        System.out.print(findMax(arr));\n    }\n}',
+        testInput: '', expectedOutput: '9',
+        explanation: 'Placing `return max;` inside the `if` block forces the method to immediately end on the first element found greater than the minimum, returning 1 instead of continuing to check the rest.'
     }
 ];
 
@@ -225,36 +225,36 @@ export const cppQuestions = [
     },
     // Hard (4)
     {
-        id: 'c_h1', title: 'Memory Leak (Pointers)', difficulty: 'Hard',
-        description: 'Fix the memory leak caused by un-freed heap allocation.',
-        buggyCode: '#include <iostream>\nusing namespace std;\nvoid allocate() {\n    int* ptr = new int(5);\n    cout << *ptr;\n}\nint main() {\n    allocate();\n    return 0;\n}',
-        correctCode: '#include <iostream>\nusing namespace std;\nvoid allocate() {\n    int* ptr = new int(5);\n    cout << *ptr;\n    delete ptr;\n}\nint main() {\n    allocate();\n    return 0;\n}',
-        testInput: '', expectedOutput: '5',
-        explanation: 'Memory allocated using `new` persists until explicitly freed with `delete`. Failing to delete it causes a memory leak.'
+        id: 'c_h1', title: 'Memory Leak & Pointer Math', difficulty: 'Hard',
+        description: 'Fix the dynamic array allocation logic to correctly clean up memory and prevent dangling pointers.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nint* createArray(int size) {\n    int arr[size];\n    for(int i = 0; i < size; i++) arr[i] = i;\n    return arr;\n}\nint main() {\n    int* ptr = createArray(3);\n    cout << ptr[1];\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nint* createArray(int size) {\n    int* arr = new int[size];\n    for(int i = 0; i < size; i++) arr[i] = i;\n    return arr;\n}\nint main() {\n    int* ptr = createArray(3);\n    cout << ptr[1];\n    delete[] ptr;\n    return 0;\n}',
+        testInput: '', expectedOutput: '1',
+        explanation: 'Returning a pointer to a local stack array `int arr[size];` results in undefined behavior (dangling pointer) when the stack frame pops. Allocate dynamically using `new[]`.'
     },
     {
-        id: 'c_h2', title: 'Dangling Reference', difficulty: 'Hard',
-        description: 'Returning a reference to a local variable leads to unpredictable behavior when the stack frame pops.',
-        buggyCode: '#include <iostream>\nusing namespace std;\nint& getNum() {\n    int n = 42;\n    return n;\n}\nint main() {\n    cout << getNum();\n    return 0;\n}',
-        correctCode: '#include <iostream>\nusing namespace std;\nint getNum() {\n    int n = 42;\n    return n;\n}\nint main() {\n    cout << getNum();\n    return 0;\n}',
-        testInput: '', expectedOutput: '42',
-        explanation: '`n` is a local variable whose memory is freed when `getNum()` returns. Returning a reference to it creates a dangling reference. Return by value instead.'
+        id: 'c_h2', title: 'Complex Pointer Casting Warning', difficulty: 'Hard',
+        description: 'Fix the memory block modification logic where pointer arithmetic steps out of bounds.',
+        buggyCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int arr[2] = {10, 20};\n    int* ptr = arr;\n    *(ptr + 1) = 30;\n    ptr++;\n    ptr++;\n    *ptr = 40;\n    cout << arr[0] << arr[1];\n    return 0;\n}',
+        correctCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int arr[2] = {10, 20};\n    int* ptr = arr;\n    *(ptr + 1) = 30;\n    cout << arr[0] << arr[1];\n    return 0;\n}',
+        testInput: '', expectedOutput: '1030',
+        explanation: 'Iterating the pointer twice (`ptr++`) moves it past the boundaries of the 2-element array. Dereferencing and writing to `*ptr = 40;` corrupts adjacent memory yielding a core dump.'
     },
     {
-        id: 'c_h3', title: 'Nested Loop Complexity', difficulty: 'Hard',
-        description: 'Fix the sorting logic so it compares items properly rather than rewriting them incorrectly.',
-        buggyCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int arr[] = {3, 1, 2};\n    for(int i=0; i<3; i++) {\n        for(int j=0; j<3; j++) {\n            if(arr[i] < arr[j]) {\n                arr[i] = arr[j];\n            }\n        }\n    }\n    for(int x: arr) cout << x;\n    return 0;\n}',
-        correctCode: '#include <iostream>\nusing namespace std;\nint main() {\n    int arr[] = {3, 1, 2};\n    for(int i=0; i<3; i++) {\n        for(int j=i+1; j<3; j++) {\n            if(arr[i] > arr[j]) {\n                int temp = arr[i];\n                arr[i] = arr[j];\n                arr[j] = temp;\n            }\n        }\n    }\n    for(int x: arr) cout << x;\n    return 0;\n}',
-        testInput: '', expectedOutput: '123',
-        explanation: 'The original loop repeatedly destroyed values without using a temporary variable for swapping, corrupting the array.'
+        id: 'c_h3', title: 'Nested Loop Iterator Invalidated', difficulty: 'Hard',
+        description: 'Fix the vector element removal inside a loop which invalidates iterators leading to a crash.',
+        buggyCode: '#include <iostream>\n#include <vector>\nusing namespace std;\nint main() {\n    vector<int> v = {1, 2, 2, 3};\n    for(auto it = v.begin(); it != v.end(); ++it) {\n        if(*it == 2) v.erase(it);\n    }\n    for(int n : v) cout << n;\n    return 0;\n}',
+        correctCode: '#include <iostream>\n#include <vector>\nusing namespace std;\nint main() {\n    vector<int> v = {1, 2, 2, 3};\n    for(auto it = v.begin(); it != v.end(); ) {\n        if(*it == 2) it = v.erase(it);\n        else ++it;\n    }\n    for(int n : v) cout << n;\n    return 0;\n}',
+        testInput: '', expectedOutput: '13',
+        explanation: 'Calling `v.erase(it)` invalidates the iterator `it`. The loop definition unconditionally increments it (`++it`), skipping the next element or crashing. Erase returns the next valid iterator.'
     },
     {
-        id: 'c_h4', title: 'Endless Recursion Error', difficulty: 'Hard',
-        description: 'Fix the recursive countdown so it terminates gracefully at 0.',
-        buggyCode: '#include <iostream>\nusing namespace std;\nvoid countdown(int n) {\n    if (n == 0) return;\n    cout << n;\n    countdown(n);\n}\nint main() {\n    countdown(3);\n    return 0;\n}',
-        correctCode: '#include <iostream>\nusing namespace std;\nvoid countdown(int n) {\n    if (n == 0) return;\n    cout << n;\n    countdown(n - 1);\n}\nint main() {\n    countdown(3);\n    return 0;\n}',
-        testInput: '', expectedOutput: '321',
-        explanation: 'The recursive call `countdown(n)` passed the same value continuously, resulting in an infinite recursion stack overflow.'
+        id: 'c_h4', title: 'Data Structure Map Traversal', difficulty: 'Hard',
+        description: 'Fix the mapping edge condition where accessing keys by index accidentally creates default elements.',
+        buggyCode: '#include <iostream>\n#include <map>\nusing namespace std;\nint main() {\n    map<int, string> m;\n    m[1] = "A";\n    if(m[2] == "B") cout << "Found ";\n    cout << m.size();\n    return 0;\n}',
+        correctCode: '#include <iostream>\n#include <map>\nusing namespace std;\nint main() {\n    map<int, string> m;\n    m[1] = "A";\n    if(m.find(2) != m.end() && m[2] == "B") cout << "Found ";\n    cout << m.size();\n    return 0;\n}',
+        testInput: '', expectedOutput: '1',
+        explanation: 'Using `m[2]` physically inserts the key `2` with a default value into the map if it doesn\'t exist, causing the total size to jump to 2 incorrectly. Use `m.find()` to check existence.'
     }
 ];
 

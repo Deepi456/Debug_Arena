@@ -89,7 +89,7 @@ export default function ExamArea() {
         }
 
         if (student.status === 'completed') {
-            navigate(`/result/${eventCode}/${studentId}`);
+            navigate('/results');
             return;
         }
 
@@ -173,7 +173,7 @@ export default function ExamArea() {
     const handleCompleteExam = () => {
         const timeTaken = EXAM_DURATION - timeLeft;
         completeExam(eventCode, studentId, timeTaken, codeValues);
-        navigate(`/result/${eventCode}/${studentId}`);
+        navigate('/results');
     };
 
     // Editor configuration
@@ -210,13 +210,18 @@ export default function ExamArea() {
         return 71;
     };
 
+    const normalize = (code) => {
+        if (!code) return "";
+        return code.toString().replace(/\s+/g,"").trim().toLowerCase();
+    };
+
     const handleRunCode = async (isSubmit = false) => {
         const currentQ = questions[currentIndex];
         const sourceCode = codeValues[currentIndex];
 
         setIsExecuting(true);
         try {
-            const response = await executeCode(sourceCode, mapLangToJudge0(student.language), currentQ.testInput);
+            const response = await executeCode(sourceCode, mapLangToJudge0(student.language), currentQ.testInput, currentQ);
 
             let outputStr = response.stdout ? response.stdout.trim() : '';
             let errorStr = response.stderr ? response.stderr.trim() : response.compile_output ? response.compile_output.trim() : '';
@@ -227,7 +232,7 @@ export default function ExamArea() {
 
             if (statusId === 3) {
                 // Accepted (syntactically)
-                if (outputStr === currentQ.expectedOutput) {
+                if (normalize(outputStr) === normalize(currentQ.expectedOutput) || normalize(sourceCode) === normalize(currentQ.correctCode)) {
                     isCorrect = true;
                     uiMessage = 'Correct Answer';
                 } else {

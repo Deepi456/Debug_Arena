@@ -65,6 +65,7 @@ export default function HostEvent() {
 
     const handleEnd = () => {
         endEvent(eventCode);
+        navigate('/');
     };
 
     // Sort students for leaderboard: by score descending, then by time taken ascending
