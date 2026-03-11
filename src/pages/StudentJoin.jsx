@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { UserPlus, ArrowRight, RefreshCw } from 'lucide-react';
-import { doc, getDoc, updateDoc, arrayUnion, setDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function StudentJoin() {
@@ -27,23 +27,24 @@ export default function StudentJoin() {
         const code = formData.eventCode.trim().toUpperCase();
 
         try {
-            // Step 2: Check whether the event exists in Firebase.
-            const eventRef = doc(db, "events", code);
-            const eventSnap = await getDoc(eventRef);
+            const eventsRef = collection(db, "events");
+            const q = query(eventsRef, where("__name__", "==", code));
+            const querySnapshot = await getDocs(q);
 
-            // Step 3: Validate the event.
-            if (!eventSnap.exists()) {
+            if (querySnapshot.empty) {
                 setError("Invalid Event Code");
                 setIsValidating(false);
                 return;
             }
+
+            const eventDoc = querySnapshot.docs[0];
 
             const { name, email, language } = formData;
             const joinTime = Date.now();
 
             // Step 4: Add the participant to the event.
             // Use Firebase arrayUnion to safely add participants without overwriting existing participants.
-            await updateDoc(eventRef, {
+            await updateDoc(doc(db, "events", eventDoc.id), {
                 participants: arrayUnion({
                     name: name,
                     email: email,
@@ -55,7 +56,7 @@ export default function StudentJoin() {
 
             // Compatibility: Also add to participants subcollection for leaderboard & scoring logic
             const studentId = email;
-            const studentDocRef = doc(db, 'events', code, 'participants', studentId);
+            const studentDocRef = doc(db, 'events', eventDoc.id, 'participants', studentId);
             await setDoc(studentDocRef, {
                 id: studentId,
                 name: name,
@@ -69,10 +70,10 @@ export default function StudentJoin() {
                 joinedAt: joinTime
             });
 
-            localStorage.setItem('eventCode', code);
+            localStorage.setItem('eventCode', eventDoc.id);
             localStorage.setItem('debugArenaSession', JSON.stringify({
                 role: 'participant',
-                eventCode: code,
+                eventCode: eventDoc.id,
                 studentId: studentId,
                 name: name,
                 email: email,
