@@ -23,39 +23,63 @@ export default function StudentJoin() {
         setError('');
         setIsValidating(true);
 
+        // Step 1: Sanitize the event code input.
         const code = formData.eventCode.trim().toUpperCase();
 
         try {
-            const eventRef = doc(db, 'events', code);
+            // Step 2: Check whether the event exists in Firebase.
+            const eventRef = doc(db, "events", code);
             const eventSnap = await getDoc(eventRef);
 
+            // Step 3: Validate the event.
             if (!eventSnap.exists()) {
-                setError('Invalid Event Code');
+                setError("Invalid Event Code");
                 setIsValidating(false);
                 return;
             }
 
+            const { name, email, language } = formData;
+            const joinTime = Date.now();
+
+            // Step 4: Add the participant to the event.
+            // Use Firebase arrayUnion to safely add participants without overwriting existing participants.
             await updateDoc(eventRef, {
                 participants: arrayUnion({
-                    name: formData.name,
-                    email: formData.email,
-                    language: formData.language,
+                    name: name,
+                    email: email,
+                    language: language,
                     score: 0,
-                    joinedAt: Date.now()
+                    joinedAt: joinTime
                 })
+            });
+
+            // Compatibility: Also add to participants subcollection for leaderboard & scoring logic
+            const studentId = email;
+            const studentDocRef = doc(db, 'events', code, 'participants', studentId);
+            await setDoc(studentDocRef, {
+                id: studentId,
+                name: name,
+                email: email,
+                language: language,
+                score: 0,
+                status: 'active',
+                timeTaken: 0,
+                questionsCompleted: 0,
+                warnings: 0,
+                joinedAt: joinTime
             });
 
             localStorage.setItem('eventCode', code);
             localStorage.setItem('debugArenaSession', JSON.stringify({
                 role: 'participant',
                 eventCode: code,
-                studentId: formData.email,
-                name: formData.name,
-                email: formData.email,
-                language: formData.language
+                studentId: studentId,
+                name: name,
+                email: email,
+                language: language
             }));
 
-            // Since user specifically said navigate('/waiting-room') and we want to precisely respect their snippet:
+            // Step 5: Redirect the participant to the waiting room.
             navigate("/waiting-room");
         } catch (error) {
             console.error(error);
