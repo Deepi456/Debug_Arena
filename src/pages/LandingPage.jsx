@@ -5,8 +5,16 @@ import { UserPlus, MonitorPlay, Code2 } from 'lucide-react';
 export default function LandingPage() {
     const navigate = useNavigate();
 
-    // Removed automatic localStorage-based redirection
-    // Users must selectively choose their path
+    // Role detection on website load
+    useEffect(() => {
+        const role = localStorage.getItem('role');
+
+        if (role === 'host') {
+            navigate('/host-dashboard');
+        } else if (role === 'participant') {
+            navigate('/waiting-room');
+        }
+    }, [navigate]);
 
     return (
         <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-4">

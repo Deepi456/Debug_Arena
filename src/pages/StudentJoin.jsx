@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { UserPlus, ArrowRight, RefreshCw } from 'lucide-react';
-import { doc, getDoc, updateDoc, arrayUnion, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function StudentJoin() {
@@ -27,60 +27,44 @@ export default function StudentJoin() {
         const code = formData.eventCode.trim().toUpperCase();
 
         try {
-            const eventsRef = collection(db, "events");
-            const q = query(eventsRef, where("__name__", "==", code));
-            const querySnapshot = await getDocs(q);
+            const eventRef = doc(db, "events", code);
+            const eventSnap = await getDoc(eventRef);
 
-            if (querySnapshot.empty) {
+            if (!eventSnap.exists()) {
                 setError("Invalid Event Code");
                 setIsValidating(false);
                 return;
             }
 
-            const eventDoc = querySnapshot.docs[0];
-
             const { name, email, language } = formData;
             const joinTime = Date.now();
 
-            // Step 4: Add the participant to the event.
-            // Use Firebase arrayUnion to safely add participants without overwriting existing participants.
-            await updateDoc(doc(db, "events", eventDoc.id), {
-                participants: arrayUnion({
-                    name: name,
-                    email: email,
-                    language: language,
-                    score: 0,
-                    joinedAt: joinTime
-                })
-            });
-
-            // Compatibility: Also add to participants subcollection for leaderboard & scoring logic
-            const studentId = email;
-            const studentDocRef = doc(db, 'events', eventDoc.id, 'participants', studentId);
-            await setDoc(studentDocRef, {
-                id: studentId,
+            // Add participant into subcollection:
+            await addDoc(collection(db, "events", code, "participants"), {
                 name: name,
                 email: email,
                 language: language,
                 score: 0,
+                joinedAt: joinTime,
                 status: 'active',
                 timeTaken: 0,
                 questionsCompleted: 0,
-                warnings: 0,
-                joinedAt: joinTime
+                warnings: 0
             });
 
-            localStorage.setItem('eventCode', eventDoc.id);
+            // Store participant session:
+            localStorage.setItem('role', 'participant');
+            localStorage.setItem('eventCode', code);
             localStorage.setItem('debugArenaSession', JSON.stringify({
                 role: 'participant',
-                eventCode: eventDoc.id,
-                studentId: studentId,
+                eventCode: code,
+                studentId: email,
                 name: name,
                 email: email,
                 language: language
             }));
 
-            // Step 5: Redirect the participant to the waiting room.
+            // Redirect participant to:
             navigate("/waiting-room");
         } catch (error) {
             console.error(error);
