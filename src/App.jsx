@@ -19,7 +19,7 @@ function App() {
 
             {/* Host Routes */}
             <Route path="/host" element={<HostDashboard />} />
-            <Route path="/host/:eventCode" element={<HostEvent />} />
+            <Route path="/host-dashboard" element={<HostEvent />} />
 
             {/* Student Routes */}
             <Route path="/join" element={<StudentJoin />} />

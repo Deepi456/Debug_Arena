@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { UserPlus, ArrowRight, RefreshCw } from 'lucide-react';
-import { doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function StudentJoin() {
@@ -28,7 +28,22 @@ export default function StudentJoin() {
 
         try {
             const eventRef = doc(db, "events", code);
-            const eventSnap = await getDoc(eventRef);
+            let eventSnap;
+            try {
+                eventSnap = await getDoc(eventRef);
+            } catch (firestoreErr) {
+                console.error("Firestore getDoc error:", firestoreErr);
+                // Surface the actual Firestore error (e.g. permission-denied, network error)
+                if (firestoreErr.code === 'permission-denied') {
+                    setError("Firestore permission denied. Please check that Firestore security rules are deployed.");
+                } else if (firestoreErr.code === 'unavailable') {
+                    setError("Firestore is unavailable. Please check your network connection.");
+                } else {
+                    setError(`Firestore error: ${firestoreErr.code || firestoreErr.message}`);
+                }
+                setIsValidating(false);
+                return;
+            }
 
             if (!eventSnap.exists()) {
                 setError("Invalid Event Code");
@@ -39,8 +54,12 @@ export default function StudentJoin() {
             const { name, email, language } = formData;
             const joinTime = Date.now();
 
-            // Add participant into subcollection:
-            await addDoc(collection(db, "events", code, "participants"), {
+            // Generate a unique participant ID
+            const participantId = crypto.randomUUID();
+
+            // Add participant into subcollection with a known document ID:
+            const participantRef = doc(db, "events", code, "participants", participantId);
+            await setDoc(participantRef, {
                 name: name,
                 email: email,
                 language: language,
@@ -52,13 +71,13 @@ export default function StudentJoin() {
                 warnings: 0
             });
 
-            // Store participant session:
+            // Store participant session with the actual Firestore doc ID:
             localStorage.setItem('role', 'participant');
             localStorage.setItem('eventCode', code);
             localStorage.setItem('debugArenaSession', JSON.stringify({
                 role: 'participant',
                 eventCode: code,
-                studentId: email,
+                studentId: participantId,
                 name: name,
                 email: email,
                 language: language
@@ -67,8 +86,12 @@ export default function StudentJoin() {
             // Redirect participant to:
             navigate("/waiting-room");
         } catch (error) {
-            console.error(error);
-            setError('Failed to join event. Try again.');
+            console.error("Join event error:", error);
+            if (error.code === 'permission-denied') {
+                setError("Firestore permission denied. Please deploy your Firestore security rules.");
+            } else {
+                setError(`Failed to join event: ${error.code || error.message || 'Unknown error'}`);
+            }
         } finally {
             setIsValidating(false);
         }

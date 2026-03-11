@@ -84,13 +84,11 @@ export default function ExamArea() {
         }
 
         if (student.status === 'disqualified') {
-            localStorage.removeItem('debugArenaSession');
             navigate(`/disqualified/${eventCode}/${studentId}`);
             return;
         }
 
         if (student.status === 'completed') {
-            localStorage.removeItem('debugArenaSession');
             navigate(`/result/${eventCode}/${studentId}`);
             return;
         }
@@ -175,8 +173,6 @@ export default function ExamArea() {
     const handleCompleteExam = () => {
         const timeTaken = EXAM_DURATION - timeLeft;
         completeExam(eventCode, studentId, timeTaken, codeValues);
-        localStorage.removeItem('debugArenaSession');
-        localStorage.removeItem('eventCode');
         navigate(`/result/${eventCode}/${studentId}`);
     };
 

@@ -34,10 +34,15 @@ export default function ResultPage() {
         fetchStudent();
     }, [eventCode, studentId]);
 
+    // Allow some time for AppContext (events) to sync before forcing a redirect
     useEffect(() => {
+        let timeout;
         if (!isLoading && (!event || !student)) {
-            navigate('/');
+            timeout = setTimeout(() => {
+                navigate('/');
+            }, 3000);
         }
+        return () => clearTimeout(timeout);
     }, [event, student, isLoading, navigate]);
 
     if (isLoading || !event || !student) {

@@ -9,6 +9,8 @@ export const useAppContext = () => useContext(AppContext);
 
 export const AppProvider = ({ children }) => {
     const [data, setData] = useState({ events: {} });
+    const [eventsLoading, setEventsLoading] = useState(true);
+    const [eventsError, setEventsError] = useState(null);
 
     // Sync state with Firestore real-time listener (Only events, participants handled by local active components)
     useEffect(() => {
@@ -21,8 +23,12 @@ export const AppProvider = ({ children }) => {
             });
 
             setData({ events: newEvents });
+            setEventsLoading(false);
+            setEventsError(null);
         }, (error) => {
             console.error("Error connecting to Firestore: ", error);
+            setEventsLoading(false);
+            setEventsError(error.code || error.message);
         });
 
         return () => unsubscribe();
@@ -213,6 +219,8 @@ export const AppProvider = ({ children }) => {
     return (
         <AppContext.Provider value={{
             events: data.events,
+            eventsLoading,
+            eventsError,
             createEvent,
             joinEvent,
             startEvent,

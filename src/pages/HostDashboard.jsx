@@ -5,15 +5,30 @@ import { MonitorPlay, ArrowRight } from 'lucide-react';
 
 export default function HostDashboard() {
     const [hostName, setHostName] = useState('');
+    const [error, setError] = useState('');
     const navigate = useNavigate();
     const { createEvent } = useAppContext();
 
     const handleCreate = async (e) => {
         e.preventDefault();
         if (!hostName.trim()) return;
+        setError('');
 
-        const eventCode = await createEvent(hostName);
-        navigate(`/host/${eventCode}`);
+        try {
+            const eventCode = await createEvent(hostName);
+
+            localStorage.setItem("role", "host");
+            localStorage.setItem("eventCode", eventCode);
+
+            navigate(`/host-dashboard`);
+        } catch (err) {
+            console.error("Create event error:", err);
+            if (err.code === 'permission-denied') {
+                setError("Firestore permission denied. Please deploy your Firestore security rules.");
+            } else {
+                setError(`Failed to create event: ${err.code || err.message || 'Unknown error'}`);
+            }
+        }
     };
 
     return (

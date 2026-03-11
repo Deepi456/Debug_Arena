@@ -1,28 +1,24 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { Users, Play, Trophy, Clock, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
 
 export default function HostEvent() {
-    const { eventCode } = useParams();
+    const eventCode = localStorage.getItem('eventCode');
     const navigate = useNavigate();
-    const { events, startEvent, endEvent, pauseEvent, resetEvent } = useAppContext();
+    const { events, eventsLoading, eventsError, startEvent, endEvent, pauseEvent, resetEvent } = useAppContext();
     const [participants, setParticipants] = useState([]);
 
     const event = events[eventCode];
 
-    // If event doesn't exist, redirect after giving context a moment to sync from Firebase
+    // Only redirect if loading is complete AND event truly doesn't exist
     useEffect(() => {
-        let timeout;
-        if (!event) {
-            timeout = setTimeout(() => {
-                navigate('/host');
-            }, 3000);
+        if (!eventsLoading && !event && !eventsError) {
+            navigate('/host');
         }
-        return () => clearTimeout(timeout);
-    }, [event, navigate]);
+    }, [event, eventsLoading, eventsError, navigate]);
 
     useEffect(() => {
         if (!eventCode) return;
@@ -37,12 +33,27 @@ export default function HostEvent() {
         return () => unsubscribe();
     }, [eventCode]);
 
+    if (eventsError) {
+        return (
+            <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-4">
+                <div className="text-center">
+                    <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-white mb-2">Firestore Connection Error</h2>
+                    <p className="text-gray-400 mb-2">Could not connect to the database.</p>
+                    <p className="text-red-400 text-sm font-mono bg-red-500/10 border border-red-500/30 px-4 py-2 rounded-lg inline-block">{eventsError}</p>
+                    <p className="text-gray-500 text-sm mt-4">If this is a hosted deployment, make sure your Firestore security rules are deployed.</p>
+                </div>
+            </div>
+        );
+    }
+
     if (!event) {
         return (
             <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-4">
                 <div className="text-center">
                     <RefreshCw className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-white mb-2">Loading Arena Data...</h2>
+                    <p className="text-gray-500 text-sm mt-2">Connecting to Firestore...</p>
                 </div>
             </div>
         );
