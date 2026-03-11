@@ -23,8 +23,8 @@ function App() {
 
             {/* Student Routes */}
             <Route path="/join" element={<StudentJoin />} />
-            <Route path="/waiting-room" element={<WaitingRoom />} />
-            <Route path="/exam/:eventCode/:studentId" element={<ExamArea />} />
+            <Route path="/waiting" element={<WaitingRoom />} />
+            <Route path="/exam" element={<ExamArea />} />
             <Route path="/results" element={<ResultPage />} />
             <Route path="/disqualified/:eventCode/:studentId" element={<DisqualifiedPage />} />
           </Routes>

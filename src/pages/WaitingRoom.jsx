@@ -35,7 +35,7 @@ export default function WaitingRoom() {
                 setEventStatus(data.status);
 
                 if (data.status === 'started') {
-                    navigate(`/exam/${eventCode}/${studentId}`);
+                    navigate('/exam');
                 }
             }
         });

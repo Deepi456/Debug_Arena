@@ -11,7 +11,9 @@ import { doc, onSnapshot } from 'firebase/firestore';
 const EXAM_DURATION = 30 * 60; // 30 minutes in seconds
 
 export default function ExamArea() {
-    const { eventCode, studentId } = useParams();
+    const eventCode = localStorage.getItem('eventCode');
+    const sessionStore = localStorage.getItem('debugArenaSession');
+    const studentId = sessionStore ? JSON.parse(sessionStore).studentId : null;
     const navigate = useNavigate();
     const { events, completeExam, updateStudentScore, warnStudent } = useAppContext();
 

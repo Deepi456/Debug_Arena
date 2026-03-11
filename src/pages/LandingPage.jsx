@@ -6,15 +6,10 @@ export default function LandingPage() {
     const navigate = useNavigate();
 
     // Role detection on website load
+    // Intentionally removed auto-redirect to allow users to reach the homepage cleanly if they manually access the root.
     useEffect(() => {
-        const role = localStorage.getItem('role');
-
-        if (role === 'host') {
-            navigate('/host-dashboard');
-        } else if (role === 'participant') {
-            navigate('/waiting-room');
-        }
-    }, [navigate]);
+        // No auto-redirect logic
+    }, []);
 
     return (
         <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-4">

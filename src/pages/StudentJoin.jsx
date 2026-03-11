@@ -84,7 +84,7 @@ export default function StudentJoin() {
             }));
 
             // Redirect participant to:
-            navigate("/waiting-room");
+            navigate("/waiting");
         } catch (error) {
             console.error("Join event error:", error);
             if (error.code === 'permission-denied') {
